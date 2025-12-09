@@ -1,82 +1,82 @@
 targetScope = 'subscription'
 
-@description('デプロイするリージョン')
+@description('Region to deploy')
 param location string = 'japaneast'
 
-@description('リソースグループ名のプレフィックス')
+@description('Resource group name prefix')
 param resourceGroupPrefix string = 'rg'
 
-@description('IPアドレスのプレフィックス')
+@description('IP address prefix')
 param ipPrefix string = '10.99'
 
-@description('ストレージアカウント名のベース')
+@description('Storage account name base')
 param storageAccountBase string = 'acadifytest'
 
-@description('ストレージアカウントのコンテナ名')
+@description('Storage account container name')
 param storageAccountContainer string = 'dfy'
 
-@description('Redis名のベース')
+@description('Redis name base')
 param redisNameBase string = 'acadifyredis'
 
-@description('PostgreSQL名のベース')
+@description('PostgreSQL name base')
 param psqlFlexibleBase string = 'acadifypsql'
 
-@description('PostgreSQLユーザー名')
+@description('PostgreSQL user name')
 param pgsqlUser string = 'user'
 
-@description('PostgreSQLパスワード')
+@description('PostgreSQL password')
 @secure()
 param pgsqlPassword string = '#QWEASDasdqwe'
 
-@description('ACA環境名')
+@description('ACA environment name')
 param acaEnvName string = 'dify-aca-env'
 
-@description('ACA Log Analyticsワークスペース名')
+@description('ACA Log Analytics workspace name')
 param acaLogaName string = 'dify-loga'
 
-@description('独自証明書を提供するかどうか')
+@description('Whether to provide a custom certificate')
 param isProvidedCert bool = true
 
-@description('証明書の内容 (Base64エンコード)')
+@description('Certificate content (Base64 encoded)')
 @secure()
 param acaCertBase64Value string = ''
 
-@description('証明書のパスワード')
+@description('Certificate password')
 @secure()
 param acaCertPassword string = 'password'
 
-@description('Difyのカスタムドメイン')
+@description('Dify custom domain')
 param acaDifyCustomerDomain string = 'dify.example.com'
 
-@description('ACAアプリの最小インスタンス数')
+@description('Minimum instance count for ACA app')
 param acaAppMinCount int = 0
 
-@description('ACAを有効にするかどうか')
+@description('Whether to enable ACA')
 param isAcaEnabled bool = false
 
-@description('Dify APIイメージ')
-param difyApiImage string = 'langgenius/dify-api:1.9.0'
+@description('Dify API image')
+param difyApiImage string = 'langgenius/dify-api:1.10.1-fix.1'
 
-@description('Dify サンドボックスイメージ')
+@description('Dify sandbox image')
 param difySandboxImage string = 'langgenius/dify-sandbox:0.2.12'
 
-@description('Dify Webイメージ')
-param difyWebImage string = 'langgenius/dify-web:1.9.0'
+@description('Dify web image')
+param difyWebImage string = 'langgenius/dify-web:1.10.1-fix.1'
 
-@description('Dify Plugin Daemonイメージ')
-param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.3.0-local'
+@description('Dify plugin daemon image')
+param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.4.1-local'
 
 
-// リソースグループを作成
+// Create resource group
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: '${resourceGroupPrefix}-${location}'
   location: location
 }
 
-// 一意のリソース名のためのハッシュを生成
+// Generate hash for unique resource names
 var rgNameHex = uniqueString(subscription().id, rg.name)
 
-// ネットワーク関連のリソースをデプロイ
+// Deploy network-related resources
 module vnetModule './modules/vnet.bicep' = {
   name: 'vnetDeploy'
   scope: rg
@@ -86,7 +86,7 @@ module vnetModule './modules/vnet.bicep' = {
   }
 }
 
-// ストレージアカウントとファイル共有をデプロイ
+// Deploy storage account and file share
 module storageModule './modules/storage.bicep' = {
   name: 'storageDeploy'
   scope: rg
@@ -99,7 +99,7 @@ module storageModule './modules/storage.bicep' = {
   }
 }
 
-// ファイル共有をデプロイ
+// Deploy file shares
 module nginxFileShareModule './modules/fileshare.bicep' = {
   name: 'nginxFileShareDeploy'
   scope: rg
@@ -140,7 +140,7 @@ module pluginStorageFileShareModule './modules/fileshare.bicep' = {
   }
 }
 
-// PostgreSQLサーバーをデプロイ
+// Deploy PostgreSQL server
 module postgresqlModule './modules/postgresql.bicep' = {
   name: 'postgresqlDeploy'
   scope: rg
@@ -154,7 +154,7 @@ module postgresqlModule './modules/postgresql.bicep' = {
   }
 }
 
-// Redisキャッシュをデプロイ (条件付き)
+// Deploy Redis cache (conditional)
 module redisModule './modules/redis-cache.bicep' = if (isAcaEnabled) {
   name: 'redisDeploy'
   scope: rg
@@ -166,7 +166,7 @@ module redisModule './modules/redis-cache.bicep' = if (isAcaEnabled) {
   }
 }
 
-// ACA環境とアプリをデプロイ
+// Deploy ACA environment and apps
 module acaModule './modules/aca-env.bicep' = {
   name: 'acaEnvDeploy'
   scope: rg
@@ -202,5 +202,5 @@ module acaModule './modules/aca-env.bicep' = {
   }
 }
 
-// デプロイ後の出力
+// Post-deployment output
 output difyAppUrl string = acaModule.outputs.difyAppUrl

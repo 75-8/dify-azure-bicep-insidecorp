@@ -20,8 +20,8 @@ resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2022-0
   }
 }
 
-// ファイル共有に対するファイルアップロードはBicepでは直接サポートされていないため、
-// デプロイ後のスクリプトまたはAzure CLIコマンドで実行する必要があります
+// File upload to file share is not directly supported in Bicep,
+// so it must be executed with a post-deployment script or Azure CLI command
 
 output shareName string = fileShare.name
 output shareId string = fileShare.id

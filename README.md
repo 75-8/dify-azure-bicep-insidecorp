@@ -1,7 +1,7 @@
 ## dify-azure-bicep
 Deploy [langgenius/dify](https://github.com/langgenius/dify), an LLM based chat bot app on Azure with Bicep.
 
-> **Note**: This repository rewrites the contents of [dify-azure-terraform](https://github.com/nikawang/dify-azure-terraform) in Bicep and supports Dify 1.x.
+> **Note**: This repository rewrites the contents of [dify-azure-terraform](https://github.com/nikawang/dify-azure-terraform) in Bicep and supports **Dify v1.10.1-fix.1**.
 
 ### Topology
 Front-end access:
@@ -22,10 +22,38 @@ Before you provision Dify, please check and set the variables in parameters.json
 ### Bicep Variables Documentation
 
 This document provides detailed descriptions of the variables used in the Bicep configuration for setting up the Dify environment.
+
+### ⚠️ Security Notice
+
+**IMPORTANT**: The `parameters.json` file contains sensitive information such as database passwords and certificate passwords. 
+
+Before deploying:
+
+1. **Copy the example file**: 
+   ```bash
+   cp parameters.example.json parameters.json
+   ```
+
+2. **Set secure passwords**: Edit `parameters.json` and replace the placeholder values with your own secure passwords:
+   - `pgsqlPassword`: PostgreSQL database password (minimum 8 characters, must include uppercase, lowercase, and numbers)
+   - `acaCertPassword`: Certificate password (only required if `isProvidedCert` is `true`)
+
+3. **Do NOT commit** the `parameters.json` file to version control. It is already included in `.gitignore`.
+
+**Password Requirements**:
+- Use unique, strong passwords for each deployment
+- Do not reuse passwords across environments
+- Consider using a password manager to generate and store secure passwords
+
 ### Kick Start
 ```bash
 az login
 az account set --subscription <subscription-id>
+
+# Copy and configure parameters file
+cp parameters.example.json parameters.json
+# Edit parameters.json with your secure passwords
+
 ./deploy.ps1
 ```
 
@@ -85,8 +113,8 @@ az account set --subscription <subscription-id>
 
 - **Parameter Name**: `pgsqlPassword`
 - **Type**: `string`
-- **Default Value**: `DFE%S_FgrgeA143Sdx`
-- **Note**: Specified as a secure parameter
+- **Default Value**: `YOUR_SECURE_PASSWORD_HERE`
+- **Note**: Specified as a secure parameter. **Must be changed before deployment.** Use a strong password with at least 8 characters including uppercase, lowercase, and numbers.
 
 ### ACA Environment Parameters
 
@@ -120,8 +148,8 @@ az account set --subscription <subscription-id>
 
 - **Parameter Name**: `acaCertPassword`
 - **Type**: `string`
-- **Default Value**: `fergEAR#FSr!eg`
-- **Note**: Specified as a secure parameter
+- **Default Value**: `YOUR_CERT_PASSWORD_HERE`
+- **Note**: Specified as a secure parameter. **Only required if you bring your own certificate** (`isProvidedCert` is `true`). Must be changed before deployment.
 
 ##### ACA Dify Customer Domain (if isProvidedCert is false)
 
@@ -141,7 +169,7 @@ az account set --subscription <subscription-id>
 
 - **Parameter Name**: `difyApiImage`
 - **Type**: `string`
-- **Default Value**: `langgenius/dify-api:1.6.0`
+- **Default Value**: `langgenius/dify-api:1.10.1-fix.1`
 
 #### Dify Sandbox Image
 
@@ -153,10 +181,10 @@ az account set --subscription <subscription-id>
 
 - **Parameter Name**: `difyWebImage`
 - **Type**: `string`
-- **Default Value**: `langgenius/dify-web:1.6.0`
+- **Default Value**: `langgenius/dify-web:1.10.1-fix.1`
 
 ##### Dify Plugin Daemon Image
 
 - **Parameter Name**: `difyPluginDaemonImage`
 - **Type**: `string`
-- **Default Value**: `langgenius/dify-plugin-daemon:0.1.3-local`
+- **Default Value**: `langgenius/dify-plugin-daemon:0.4.1-local`

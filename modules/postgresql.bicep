@@ -1,29 +1,29 @@
-@description('リソースの場所')
+@description('Resource location')
 param location string
 
-@description('PostgreSQLサーバー名')
+@description('PostgreSQL server name')
 param serverName string
 
-@description('PostgreSQL管理者ログイン')
+@description('PostgreSQL administrator login')
 param administratorLogin string
 
-@description('PostgreSQL管理者パスワード')
+@description('PostgreSQL administrator password')
 @secure()
 param administratorLoginPassword string
 
-@description('PostgreSQLサブネットID')
+@description('PostgreSQL subnet ID')
 param postgresSubnetId string
 
-@description('仮想ネットワークID')
+@description('Virtual network ID')
 param vnetId string
 
-// プライベートDNSゾーン
+// Private DNS zone
 resource postgresDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: 'privatelink.postgres.database.azure.com'
   location: 'global'
 }
 
-// 仮想ネットワークリンク
+// Virtual network link
 resource postgresVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   name: 'postgres-dns-link'
   parent: postgresDnsZone
@@ -37,7 +37,7 @@ resource postgresVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks
 }
 
 // PostgreSQL Flexible Server
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-03-01-preview' = {
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' = {
   name: serverName
   location: location
   sku: {
@@ -65,8 +65,8 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-03-01-pr
   }
 }
 
-// Difyデータベース
-resource difyDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-03-01-preview' = {
+// Dify database
+resource difyDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   name: 'dify'
   parent: postgresServer
   properties: {
@@ -75,8 +75,8 @@ resource difyDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-
   }
 }
 
-// Vectorデータベース
-resource vectorDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-03-01-preview' = {
+// Vector database
+resource vectorDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = {
   name: 'vector'
   parent: postgresServer
   properties: {
@@ -85,17 +85,21 @@ resource vectorDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@202
   }
 }
 
-// PGVector拡張の設定
-resource pgVectorConfig 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2023-03-01-preview' = {
+// PGVector extension configuration
+resource pgVectorConfig 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2022-12-01' = {
   name: 'azure.extensions'
   parent: postgresServer
+  dependsOn: [
+    difyDatabase
+    vectorDatabase
+  ]
   properties: {
-    value: 'vector'
+    value: 'uuid-ossp,vector'
     source: 'user-override'
   }
 }
 
-// 出力
+// Output
 output serverFqdn string = postgresServer.properties.fullyQualifiedDomainName
 output difyDbName string = difyDatabase.name
 output vectorDbName string = vectorDatabase.name

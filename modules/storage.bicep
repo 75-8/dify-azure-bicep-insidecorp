@@ -1,11 +1,11 @@
-@description('リソースの場所')
+@description('Resource location')
 param location string
 param storageAccountName string
 param containerName string
 param privateLinkSubnetId string
 param vnetId string
 
-// ストレージアカウントを作成
+// Create storage account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: storageAccountName
   location: location
@@ -16,21 +16,21 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   properties: {
     accessTier: 'Hot'
     supportsHttpsTrafficOnly: true
-    publicNetworkAccess: 'Enabled'  // 一時的にEnableに変更
+    publicNetworkAccess: 'Enabled'  // Temporarily changed to Enabled
     networkAcls: {
       bypass: 'AzureServices'
-      defaultAction: 'Allow'  // 一時的にAllowに変更
+      defaultAction: 'Allow'  // Temporarily changed to Allow
     }
   }
 }
 
-// Blobサービスを設定
+// Configure Blob service
 resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
   name: 'default'
   parent: storageAccount
 }
 
-// コンテナを作成
+// Create container
 resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
   name: containerName
   parent: blobService
@@ -39,19 +39,19 @@ resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@20
   }
 }
 
-// プライベートDNSゾーン - Blob
+// Private DNS zone - Blob
 resource blobDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: 'privatelink.blob.${environment().suffixes.storage}'
   location: 'global'
 }
 
-// プライベートDNSゾーン - File
+// Private DNS zone - File
 resource fileDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: 'privatelink.file.${environment().suffixes.storage}'
   location: 'global'
 }
 
-// 仮想ネットワークリンク - Blob
+// Virtual network link - Blob
 resource blobVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   name: 'blob-dns-link'
   parent: blobDnsZone
@@ -64,7 +64,7 @@ resource blobVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@202
   }
 }
 
-// 仮想ネットワークリンク - File
+// Virtual network link - File
 resource fileVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   name: 'file-dns-link'
   parent: fileDnsZone
@@ -77,7 +77,7 @@ resource fileVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@202
   }
 }
 
-// プライベートエンドポイント - Blob
+// Private endpoint - Blob
 resource blobPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
   name: 'pe-blob'
   location: location
@@ -99,7 +99,7 @@ resource blobPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
   }
 }
 
-// プライベートエンドポイント - File
+// Private endpoint - File
 resource filePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
   name: 'pe-file'
   location: location
@@ -121,7 +121,7 @@ resource filePrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
   }
 }
 
-// プライベートエンドポイントDNSグループ - Blob
+// Private endpoint DNS group - Blob
 resource blobPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-05-01' = {
   name: 'pdz-blob'
   parent: blobPrivateEndpoint
@@ -137,7 +137,7 @@ resource blobPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/private
   }
 }
 
-// プライベートエンドポイントDNSグループ - File
+// Private endpoint DNS group - File
 resource filePrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-05-01' = {
   name: 'pdz-file'
   parent: filePrivateEndpoint
@@ -153,7 +153,7 @@ resource filePrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/private
   }
 }
 
-// 出力
+// Output
 output storageAccountName string = storageAccount.name
 output storageAccountKey string = listKeys(storageAccount.id, storageAccount.apiVersion).keys[0].value
 output blobEndpoint string = storageAccount.properties.primaryEndpoints.blob

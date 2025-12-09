@@ -1,93 +1,93 @@
-@description('リソースの場所')
+@description('Resource location')
 param location string
 
-@description('ACA Log Analyticsワークスペース名')
+@description('ACA Log Analytics workspace name')
 param acaLogaName string
 
-@description('ACA環境名')
+@description('ACA environment name')
 param acaEnvName string
 
-@description('ACAサブネットID')
+@description('ACA subnet ID')
 param acaSubnetId string
 
-@description('ストレージアカウント名')
+@description('Storage account name')
 param storageAccountName string
 
-@description('ストレージアカウントキー')
+@description('Storage account key')
 @secure()
 param storageAccountKey string
 
-@description('ストレージコンテナ名')
+@description('Storage container name')
 param storageContainerName string
 
-@description('Redisホスト名')
+@description('Redis host name')
 param redisHostName string = ''
 
-@description('Redisプライマリキー')
+@description('Redis primary key')
 @secure()
 param redisPrimaryKey string = ''
 
-@description('PostgreSQLサーバー完全修飾ドメイン名')
+@description('PostgreSQL server fully qualified domain name')
 param postgresServerFqdn string
 
-@description('PostgreSQL管理者ログイン')
+@description('PostgreSQL administrator login')
 param postgresAdminLogin string
 
-@description('PostgreSQL管理者パスワード')
+@description('PostgreSQL administrator password')
 @secure()
 param postgresAdminPassword string
 
-@description('PostgresのDifyデータベース名')
+@description('Postgres Dify database name')
 param postgresDifyDbName string
 
-@description('PostgresのVectorデータベース名')
+@description('Postgres Vector database name')
 param postgresVectorDbName string
 
-@description('Nginxファイル共有名')
+@description('Nginx file share name')
 param nginxShareName string
 
-@description('SSRFプロキシファイル共有名')
+@description('SSRF proxy file share name')
 param ssrfProxyShareName string
 
-@description('Sandboxファイル共有名')
+@description('Sandbox file share name')
 param sandboxShareName string
 
-@description('プラグインファイル共有名')
+@description('Plugin file share name')
 param pluginStorageShareName string
 
-@description('独自証明書を提供するかどうか')
+@description('Whether to provide a custom certificate')
 param isProvidedCert bool = false
 
-@description('証明書の内容 (Base64エンコード)')
+@description('Certificate content (Base64 encoded)')
 @secure()
 param acaCertBase64Value string = ''
 
-@description('証明書のパスワード')
+@description('Certificate password')
 @secure()
 param acaCertPassword string = ''
 
-@description('Difyのカスタムドメイン')
+@description('Dify custom domain')
 param acaDifyCustomerDomain string = ''
 
-@description('ACAアプリの最小インスタンス数')
+@description('ACA app minimum instance count')
 param acaAppMinCount int = 0
 
-@description('Dify APIイメージ')
+@description('Dify API image')
 param difyApiImage string
 
-@description('Dify サンドボックスイメージ')
+@description('Dify Sandbox image')
 param difySandboxImage string
 
-@description('Dify Webイメージ')
+@description('Dify Web image')
 param difyWebImage string
 
-@description('Dify Plugin Daemonイメージ')
+@description('Dify Plugin Daemon image')
 param difyPluginDaemonImage string
 
-@description('Blobエンドポイント')
+@description('Blob endpoint')
 param blobEndpoint string
 
-// Log Analyticsワークスペースを作成
+// Create Log Analytics workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: acaLogaName
   location: location
@@ -99,12 +99,12 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   }
 }
 
-// ACA環境を作成
+// Create ACA environment
 resource acaEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
   name: acaEnvName
   location: location
   properties: {
-    // 最新のAPIに合わせて構造を修正
+    // Modify structure to match latest API
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
@@ -112,9 +112,9 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
         sharedKey: logAnalytics.listKeys().primarySharedKey
       }
     }
-    // workloadProfilesの代わりにこれを使用
+    // Use this instead of workloadProfiles
     zoneRedundant: false
-    // サブネット接続の指定方法を修正
+    // Modify subnet connection specification method
     vnetConfiguration: {
       infrastructureSubnetId: acaSubnetId
       internal: false
@@ -122,7 +122,7 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
   }
 }
 
-// Nginxファイル共有をACA環境にマウント
+// Mount Nginx file share to ACA environment
 resource nginxFileShare 'Microsoft.App/managedEnvironments/storages@2023-05-01' = {
   name: 'nginxshare'
   parent: acaEnv
@@ -136,7 +136,7 @@ resource nginxFileShare 'Microsoft.App/managedEnvironments/storages@2023-05-01' 
   }
 }
 
-// 証明書をACA環境に追加（条件付き）
+// Add certificate to ACA environment (conditional)
 resource difyCerts 'Microsoft.App/managedEnvironments/certificates@2023-05-01' = if (isProvidedCert) {
   name: 'difycerts'
   parent: acaEnv
@@ -146,7 +146,7 @@ resource difyCerts 'Microsoft.App/managedEnvironments/certificates@2023-05-01' =
   }
 }
 
-// Nginxアプリのリソース定義を変更
+// Change Nginx app resource definition
 resource nginxApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'nginx'
   location: location
@@ -183,13 +183,13 @@ resource nginxApp 'Microsoft.App/containerApps@2023-05-01' = {
           volumeMounts: [
             {
               volumeName: 'nginxconf'
-              mountPath: '/custom-nginx' // マウントポイントを変更
+              mountPath: '/custom-nginx' // Change mount point
             }
           ]
           command: [
             '/bin/bash'
             '-c'
-            'cp -rf /custom-nginx/* /etc/nginx/ && nginx -g "daemon off;"'
+            'rm -rf /etc/nginx/modules && cp -rf /custom-nginx/* /etc/nginx/ && nginx -g "daemon off;"'
           ]
         }
       ]
@@ -218,7 +218,7 @@ resource nginxApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// SSRFプロキシ用ファイル共有をACA環境にマウント
+// Mount SSRF proxy file share to ACA environment
 resource ssrfProxyFileShare 'Microsoft.App/managedEnvironments/storages@2023-05-01' = {
   name: 'ssrfproxyfileshare'
   parent: acaEnv
@@ -232,7 +232,7 @@ resource ssrfProxyFileShare 'Microsoft.App/managedEnvironments/storages@2023-05-
   }
 }
 
-// SSRFプロキシアプリをデプロイ
+// Deploy SSRF proxy app
 resource ssrfProxyApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'ssrfproxy'
   location: location
@@ -293,7 +293,7 @@ resource ssrfProxyApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// Sandbox用ファイル共有をACA環境にマウント
+// Mount Sandbox file share to ACA environment
 resource sandboxFileShare 'Microsoft.App/managedEnvironments/storages@2023-05-01' = {
   name: 'sandbox'
   parent: acaEnv
@@ -307,7 +307,7 @@ resource sandboxFileShare 'Microsoft.App/managedEnvironments/storages@2023-05-01
   }
 }
 
-// Sandboxアプリをデプロイ
+// Deploy Sandbox app
 resource sandboxApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'sandbox'
   location: location
@@ -398,7 +398,7 @@ resource sandboxApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// ワーカーアプリをデプロイ
+// Deploy Worker app
 resource workerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'worker'
   location: location
@@ -425,7 +425,7 @@ resource workerApp 'Microsoft.App/containerApps@2023-05-01' = {
             }
             {
               name: 'SECRET_KEY'
-              value: 'sk-9f73s3ljTXVcMT3Blb3ljTqtsKiGHXVcMT3BlbkFJLK7U'
+              value: 'dify-9f73s3ljTXVcMT3Blb3ljTqtsKiGHXVcMT3BlbkFJLK7U'
             }
             {
               name: 'DB_USERNAME'
@@ -519,6 +519,18 @@ resource workerApp 'Microsoft.App/containerApps@2023-05-01' = {
               name: 'INDEXING_MAX_SEGMENTATION_TOKENS_LENGTH'
               value: '1000'
             }
+            {
+              name: 'PLUGIN_DAEMON_URL'
+              value: 'http://plugin:5002'
+            }
+            {
+              name: 'PLUGIN_DAEMON_KEY'
+              value: 'lYkiYYT6owG+71oLerGzA7GXCgOT++6ovaezWAjpCjf+Sjc3ZtU+qUEi'
+            }
+            {
+              name: 'INNER_API_KEY_FOR_PLUGIN'
+              value: '-QaHbTe77CtuXmsfyhR7+vRjI/+XbV1AaFy691iy+kGDv2Jvy0/eAh8Y1'
+            }
           ]
         }
       ]
@@ -540,7 +552,7 @@ resource workerApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// APIアプリをデプロイ
+// Deploy API app
 resource apiApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'api'
   location: location
@@ -580,7 +592,7 @@ resource apiApp 'Microsoft.App/containerApps@2023-05-01' = {
             }
             {
               name: 'SECRET_KEY'
-              value: 'sk-9f73s3ljTXVcMT3Blb3ljTqtsKiGHXVcMT3BlbkFJLK7U'
+              value: 'dify-9f73s3ljTXVcMT3Blb3ljTqtsKiGHXVcMT3BlbkFJLK7U'
             }
             {
               name: 'CONSOLE_WEB_URL'
@@ -795,7 +807,7 @@ resource apiApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// プラグイン用ファイル共有をACA環境にマウント
+// Mount Plugin file share to ACA environment
 resource pluginstorageFileShare 'Microsoft.App/managedEnvironments/storages@2023-05-01' = {
   name: 'pluginstoragefileshare'
   parent: acaEnv
@@ -809,7 +821,7 @@ resource pluginstorageFileShare 'Microsoft.App/managedEnvironments/storages@2023
   }
 }
 
-// プラグインデーモンアプリをデプロイ
+// Deploy Plugin daemon app
 resource pluginDaemonApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'plugin'
   location: location
@@ -935,7 +947,7 @@ resource pluginDaemonApp 'Microsoft.App/containerApps@2023-05-01' = {
             }
             {
               name: 'PLUGIN_REMOTE_INSTALLING_ENABLED'
-              value: 'true'
+              value: 'false'
             }
             {
               name: 'PLUGIN_REMOTE_INSTALLING_HOST'
@@ -973,7 +985,7 @@ resource pluginDaemonApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// Webアプリをデプロイ
+// Deploy Web app
 resource webApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'web'
   location: location
@@ -1044,5 +1056,5 @@ resource webApp 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-// デプロイ出力
+// Deployment output
 output difyAppUrl string = nginxApp.properties.configuration.ingress.fqdn

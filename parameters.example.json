@@ -12,13 +12,13 @@
       "value": "adminuser"
     },
     "pgsqlPassword": {
-      "value": "DFE%S_FgrgeA143Sdx"
+      "value": "YOUR_SECURE_PASSWORD_HERE"
     },
     "isProvidedCert": {
       "value": false
     },
     "acaCertPassword": {
-      "value": "fergEAR#FSr!eg"
+      "value": "YOUR_CERT_PASSWORD_HERE"
     },
     "acaAppMinCount": {
       "value": 1
