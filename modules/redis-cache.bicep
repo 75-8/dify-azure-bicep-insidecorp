@@ -35,7 +35,7 @@ resource redisCache 'Microsoft.Cache/Redis@2023-08-01' = {
   location: location
   properties: {
     sku: {
-      name: 'Standard'
+      name: 'basic'
       family: 'C'
       capacity: 0
     }
