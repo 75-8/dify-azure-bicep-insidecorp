@@ -54,17 +54,22 @@ param acaAppMinCount int = 0
 @description('Whether to enable ACA')
 param isAcaEnabled bool = false
 
+@description('Allowed CIDR blocks for nginx ingress (corporate network only)')
+param allowedIngressCidrs array = [
+  '10.0.0.0/8'
+]
+
 @description('Dify API image')
-param difyApiImage string = 'langgenius/dify-api:1.10.1-fix.1'
+param difyApiImage string = 'langgenius/dify-api:1.13.3'
 
 @description('Dify sandbox image')
-param difySandboxImage string = 'langgenius/dify-sandbox:0.2.12'
+param difySandboxImage string = 'langgenius/dify-sandbox:0.2.14'
 
 @description('Dify web image')
-param difyWebImage string = 'langgenius/dify-web:1.10.1-fix.1'
+param difyWebImage string = 'langgenius/dify-web:1.13.3'
 
 @description('Dify plugin daemon image')
-param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.4.1-local'
+param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.5.3-local'
 
 
 // Create resource group
@@ -199,6 +204,7 @@ module acaModule './modules/aca-env.bicep' = {
     difyWebImage: difyWebImage
     difyPluginDaemonImage: difyPluginDaemonImage
     blobEndpoint: storageModule.outputs.blobEndpoint
+    allowedIngressCidrs: allowedIngressCidrs
   }
 }
 

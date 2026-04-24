@@ -87,6 +87,11 @@ param difyPluginDaemonImage string
 @description('Blob endpoint')
 param blobEndpoint string
 
+@description('Allowed CIDR blocks for nginx ingress')
+param allowedIngressCidrs array = [
+  '10.0.0.0/8'
+]
+
 // Create Log Analytics workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: acaLogaName
@@ -117,7 +122,7 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
     // Modify subnet connection specification method
     vnetConfiguration: {
       infrastructureSubnetId: acaSubnetId
-      internal: false
+      internal: true
     }
   }
 }
@@ -163,6 +168,21 @@ resource nginxApp 'Microsoft.App/containerApps@2023-05-01' = {
             weight: 100
           }
         ]
+        ipSecurityRestrictions: concat([
+          for (cidr, i) in allowedIngressCidrs: {
+            name: 'corp-allow-${i}'
+            description: 'Allow corporate network CIDR ${cidr}'
+            ipAddressRange: cidr
+            action: 'Allow'
+          }
+        ], [
+          {
+            name: 'deny-all'
+            description: 'Deny all non-corporate sources'
+            ipAddressRange: '0.0.0.0/0'
+            action: 'Deny'
+          }
+        ])
         customDomains: isProvidedCert ? [
           {
             name: acaDifyCustomerDomain

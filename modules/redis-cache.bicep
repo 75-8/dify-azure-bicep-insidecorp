@@ -39,7 +39,7 @@ resource redisCache 'Microsoft.Cache/Redis@2023-08-01' = {
       family: 'C'
       capacity: 0
     }
-    enableNonSslPort: true
+    enableNonSslPort: false
     minimumTlsVersion: '1.2'
     publicNetworkAccess: 'Disabled'
     redisVersion: '6'
