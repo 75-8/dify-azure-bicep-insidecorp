@@ -34,7 +34,14 @@ resource acaSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' = {
   parent: vnet
   properties: {
     addressPrefix: '${ipPrefix}.2.0/23'  // 10.99.2.0/23 (range of 10.99.2.0/24 + 10.99.3.0/24)
-    delegations: []
+    delegations: [
+      {
+        name: 'postgres-delegation'
+        properties: {
+          serviceName: 'Microsoft.DBforPostgreSQL/flexibleServers'
+        }
+      }
+    ]
   }
   dependsOn: [
     privateLinkSubnet
