@@ -188,3 +188,39 @@ cp parameters.example.json parameters.json
 - **Parameter Name**: `difyPluginDaemonImage`
 - **Type**: `string`
 - **Default Value**: `langgenius/dify-plugin-daemon:0.4.1-local`
+
+### Infrastructure Diagram (draw.io)
+
+インフラ構成を draw.io で可視化したファイルを追加しました。
+
+- `docs/dify-azure-infra.drawio`
+
+使い方:
+1. [diagrams.net](https://app.diagrams.net/) を開く
+2. **File > Open From > Device** で `docs/dify-azure-infra.drawio` を選択
+3. 必要に応じて環境名・CIDR・接続線を編集
+
+### Current Architecture Spec (YAML)
+
+Bicep の現在構成を仕様書として整理した YAML を追加しました。
+
+- `docs/current-architecture-spec.yaml`
+
+この YAML には、以下を含みます。
+- パラメータ既定値と命名規則
+- ネットワーク (VNet / サブネット)
+- Storage / PostgreSQL / (任意) Redis
+- ACA Environment と各 Container App の役割・依存関係
+- 主な通信フローと出力
+
+### Security Hardening (Corporate Network Only Access)
+
+以下の設定で、外部からのアクセスを制限し、社内ネットワークからのみアクセスできる構成にしています。
+
+- ACA Environment を Internal Load Balancer モード (`internal: true`) に設定
+- `nginx` ingress に CIDR ベースの `ipSecurityRestrictions` を適用
+- `allowedIngressCidrs` パラメータで許可ネットワークを定義 (既定: `10.0.0.0/8`)
+- Storage Account の Public Network Access を `Disabled` に変更し、`networkAcls.defaultAction` を `Deny` に変更
+- Redis の Non-SSL ポートを無効化 (`enableNonSslPort: false`)
+
+> 運用時は `allowedIngressCidrs` に実際の社内ネットワーク CIDR (VPN / ExpressRoute で到達可能な送信元) を設定してください。

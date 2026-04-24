@@ -54,6 +54,11 @@ param acaAppMinCount int = 0
 @description('Whether to enable ACA')
 param isAcaEnabled bool = false
 
+@description('Allowed CIDR blocks for nginx ingress (corporate network only)')
+param allowedIngressCidrs array = [
+  '10.0.0.0/8'
+]
+
 @description('Dify API image')
 param difyApiImage string = 'langgenius/dify-api:1.10.1-fix.1'
 
@@ -199,6 +204,7 @@ module acaModule './modules/aca-env.bicep' = {
     difyWebImage: difyWebImage
     difyPluginDaemonImage: difyPluginDaemonImage
     blobEndpoint: storageModule.outputs.blobEndpoint
+    allowedIngressCidrs: allowedIngressCidrs
   }
 }
 
