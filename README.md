@@ -188,3 +188,14 @@ cp parameters.example.json parameters.json
 - **Parameter Name**: `difyPluginDaemonImage`
 - **Type**: `string`
 - **Default Value**: `langgenius/dify-plugin-daemon:0.4.1-local`
+
+### Infrastructure Diagram (draw.io)
+
+インフラ構成を draw.io で可視化したファイルを追加しました。
+
+- `docs/dify-azure-infra.drawio`
+
+使い方:
+1. [diagrams.net](https://app.diagrams.net/) を開く
+2. **File > Open From > Device** で `docs/dify-azure-infra.drawio` を選択
+3. 必要に応じて環境名・CIDR・接続線を編集
