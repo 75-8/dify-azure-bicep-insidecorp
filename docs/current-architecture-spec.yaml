@@ -1,0 +1,292 @@
+version: 1
+spec_name: dify-azure-bicep-current-architecture
+generated_from:
+  - main.bicep
+  - modules/vnet.bicep
+  - modules/storage.bicep
+  - modules/postgresql.bicep
+  - modules/redis-cache.bicep
+  - modules/aca-env.bicep
+
+scope:
+  deployment_scope: subscription
+  resource_group:
+    name_pattern: "${resourceGroupPrefix}-${location}"
+
+parameters:
+  location:
+    type: string
+    default: japaneast
+  resourceGroupPrefix:
+    type: string
+    default: rg
+  ipPrefix:
+    type: string
+    default: "10.99"
+  storageAccountBase:
+    type: string
+    default: acadifytest
+  storageAccountContainer:
+    type: string
+    default: dfy
+  redisNameBase:
+    type: string
+    default: acadifyredis
+  psqlFlexibleBase:
+    type: string
+    default: acadifypsql
+  pgsqlUser:
+    type: string
+    default: user
+  pgsqlPassword:
+    type: secureString
+  acaEnvName:
+    type: string
+    default: dify-aca-env
+  acaLogaName:
+    type: string
+    default: dify-loga
+  isProvidedCert:
+    type: bool
+    default: true
+  acaDifyCustomerDomain:
+    type: string
+    default: dify.example.com
+  acaAppMinCount:
+    type: int
+    default: 0
+  isAcaEnabled:
+    type: bool
+    default: false
+  allowedIngressCidrs:
+    type: array
+    default:
+      - "10.0.0.0/8"
+
+naming:
+  uniqueness:
+    rgNameHex: uniqueString(subscription().id, rg.name)
+  derived_names:
+    storageAccountName: "${storageAccountBase}${rgNameHex}"
+    postgresServerName: "${psqlFlexibleBase}${rgNameHex}"
+    redisName: "${redisNameBase}${rgNameHex}"
+
+network:
+  vnet:
+    name: "vnet-${location}"
+    cidr: "${ipPrefix}.0.0/16"
+  subnets:
+    privateLinkSubnet:
+      name: PrivateLinkSubnet
+      cidr: "${ipPrefix}.0.0/24"
+      notes:
+        - privateEndpointNetworkPolicies: Disabled
+    acaSubnet:
+      name: ACASubnet
+      cidr: "${ipPrefix}.2.0/23"
+      delegation:
+        serviceName: Microsoft.DBforPostgreSQL/flexibleServers
+    postgresSubnet:
+      name: PostgresSubnet
+      cidr: "${ipPrefix}.4.0/24"
+      serviceEndpoints:
+        - Microsoft.Storage
+      delegation:
+        serviceName: Microsoft.DBforPostgreSQL/flexibleServers
+
+resources:
+  storage:
+    account:
+      sku: Standard_LRS
+      kind: StorageV2
+      accessTier: Hot
+      publicNetworkAccess: Disabled
+      networkAcls:
+        defaultAction: Deny
+        bypass: None
+    blob:
+      container_name_parameter: storageAccountContainer
+    file_shares:
+      - nginx
+      - sandbox
+      - ssrfproxy
+      - pluginstorage
+    private_endpoints:
+      - target: blob
+        subnet: PrivateLinkSubnet
+      - target: file
+        subnet: PrivateLinkSubnet
+    private_dns_zones:
+      - privatelink.blob.<storage_suffix>
+      - privatelink.file.<storage_suffix>
+
+  postgresql:
+    service: Microsoft.DBforPostgreSQL/flexibleServers
+    sku:
+      name: Standard_B1ms
+      tier: Burstable
+    version: "14"
+    storage_size_gb: 32
+    high_availability: Disabled
+    backup:
+      retention_days: 7
+      geo_redundant: Disabled
+    network:
+      delegated_subnet: PostgresSubnet
+      private_dns_zone: privatelink.postgres.database.azure.com
+    databases:
+      - dify
+      - vector
+    extensions:
+      azure.extensions: uuid-ossp,vector
+
+  redis:
+    enabled_when: isAcaEnabled == true
+    service: Microsoft.Cache/Redis
+    sku:
+      name: basic
+      family: C
+      capacity: 0
+    redis_version: "6"
+    enableNonSslPort: false
+    publicNetworkAccess: Disabled
+    private_endpoint_subnet: PrivateLinkSubnet
+    private_dns_zone: privatelink.redis.cache.windows.net
+
+  container_apps_environment:
+    name_parameter: acaEnvName
+    logging:
+      workspace_parameter: acaLogaName
+      destination: log-analytics
+    network:
+      infrastructure_subnet: ACASubnet
+      internal: true
+    certificate:
+      managed_environment_certificate:
+        enabled_when: isProvidedCert == true
+        inputs:
+          - acaCertBase64Value
+          - acaCertPassword
+
+container_apps:
+  nginx:
+    ingress:
+      external: true
+      targetPort: 80
+      custom_domain_when: isProvidedCert == true
+      ip_security_restrictions:
+        allow_cidrs_parameter: allowedIngressCidrs
+        deny_all: 0.0.0.0/0
+    image: nginx:latest
+    mounts:
+      - share: nginx
+        path: /custom-nginx
+
+  web:
+    ingress:
+      external: false
+      targetPort: 3000
+    image_parameter: difyWebImage
+
+  api:
+    ingress:
+      external: false
+      targetPort: 5001
+      exposedPort: 5001
+    image_parameter: difyApiImage
+    dependencies:
+      - postgresql
+      - redis (optional)
+      - storage_blob
+      - plugin
+      - sandbox
+
+  worker:
+    ingress:
+      external: false
+    image_parameter: difyApiImage
+    min_replicas_parameter: acaAppMinCount
+    dependencies:
+      - postgresql
+      - redis (optional)
+      - storage_blob
+      - plugin
+
+  sandbox:
+    ingress:
+      external: false
+      targetPort: 8194
+      transport: tcp
+    image_parameter: difySandboxImage
+    mounts:
+      - share: sandbox
+        path: /dependencies
+    proxy:
+      http_proxy_target: ssrfproxy:3128
+      https_proxy_target: ssrfproxy:3128
+
+  ssrfproxy:
+    ingress:
+      external: false
+      targetPort: 3128
+    image: ubuntu/squid:latest
+    mounts:
+      - share: ssrfproxy
+        path: /etc/squid
+
+  plugin:
+    ingress:
+      external: false
+      targetPort: 5002
+    image_parameter: difyPluginDaemonImage
+    mounts:
+      - share: pluginstorage
+        path: /app/storage
+
+traffic_overview:
+  - from: Internet
+    to: nginx
+    protocol: HTTPS
+  - from: nginx
+    to: web
+    protocol: HTTP
+  - from: web
+    to: api
+    protocol: HTTP
+  - from: api
+    to: postgresql
+    protocol: TCP/5432
+  - from: worker
+    to: postgresql
+    protocol: TCP/5432
+  - from: api
+    to: redis
+    protocol: TCP/6379 (when enabled)
+  - from: worker
+    to: redis
+    protocol: TCP/6379 (when enabled)
+  - from: sandbox
+    to: ssrfproxy
+    protocol: HTTP proxy
+
+outputs:
+  main:
+    difyAppUrl: acaModule.outputs.difyAppUrl
+  module_outputs:
+    vnet:
+      - vnetId
+      - vnetName
+      - privateLinkSubnetId
+      - acaSubnetId
+      - postgresSubnetId
+    storage:
+      - storageAccountName
+      - storageAccountKey
+      - blobEndpoint
+    postgresql:
+      - serverFqdn
+      - difyDbName
+      - vectorDbName
+    redis:
+      - redisHostName
+      - redisPrimaryKey
