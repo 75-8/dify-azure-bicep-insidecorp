@@ -58,6 +58,18 @@ parameters:
   isAcaEnabled:
     type: bool
     default: false
+  difyApiImage:
+    type: string
+    default: langgenius/dify-api:1.13.3
+  difySandboxImage:
+    type: string
+    default: langgenius/dify-sandbox:0.2.14
+  difyWebImage:
+    type: string
+    default: langgenius/dify-web:1.13.3
+  difyPluginDaemonImage:
+    type: string
+    default: langgenius/dify-plugin-daemon:0.5.3-local
   allowedIngressCidrs:
     type: array
     default:

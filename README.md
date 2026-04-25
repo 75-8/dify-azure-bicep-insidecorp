@@ -1,7 +1,7 @@
 ## dify-azure-bicep
 Deploy [langgenius/dify](https://github.com/langgenius/dify), an LLM based chat bot app on Azure with Bicep.
 
-> **Note**: This repository rewrites the contents of [dify-azure-terraform](https://github.com/nikawang/dify-azure-terraform) in Bicep and supports **Dify v1.10.1-fix.1**.
+> **Note**: This repository rewrites the contents of [dify-azure-terraform](https://github.com/nikawang/dify-azure-terraform) in Bicep and defaults to the current upstream Dify container image tags from `docker-compose-template.yaml`.
 
 ### Topology
 Front-end access:
@@ -169,25 +169,25 @@ cp parameters.example.json parameters.json
 
 - **Parameter Name**: `difyApiImage`
 - **Type**: `string`
-- **Default Value**: `langgenius/dify-api:1.10.1-fix.1`
+- **Default Value**: `langgenius/dify-api:1.13.3`
 
 #### Dify Sandbox Image
 
 - **Parameter Name**: `difySandboxImage`
 - **Type**: `string`
-- **Default Value**: `langgenius/dify-sandbox:0.2.12`
+- **Default Value**: `langgenius/dify-sandbox:0.2.14`
 
 ##### Dify Web Image
 
 - **Parameter Name**: `difyWebImage`
 - **Type**: `string`
-- **Default Value**: `langgenius/dify-web:1.10.1-fix.1`
+- **Default Value**: `langgenius/dify-web:1.13.3`
 
 ##### Dify Plugin Daemon Image
 
 - **Parameter Name**: `difyPluginDaemonImage`
 - **Type**: `string`
-- **Default Value**: `langgenius/dify-plugin-daemon:0.4.1-local`
+- **Default Value**: `langgenius/dify-plugin-daemon:0.5.3-local`
 
 ### Infrastructure Diagram (draw.io)
 
