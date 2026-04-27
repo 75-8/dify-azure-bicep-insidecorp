@@ -32,14 +32,71 @@ if (-not $loginStatus) {
     az login
 }
 
+
+function Confirm-AoaiRoleAssignment {
+    param(
+        [string]$PrincipalId,
+        [string]$AoaiResourceId,
+        [int]$MaxRetries = 10,
+        [int]$RetryIntervalSeconds = 30
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PrincipalId) -or [string]::IsNullOrWhiteSpace($AoaiResourceId)) {
+        Write-Host "Skipping AOAI RBAC verification (Entra ID for AOAI is disabled)." -ForegroundColor DarkYellow
+        return
+    }
+
+    Write-Host "Checking AOAI RBAC assignment propagation..." -ForegroundColor Cyan
+    for ($i = 1; $i -le $MaxRetries; $i++) {
+        $assignment = az role assignment list --assignee-object-id $PrincipalId --scope $AoaiResourceId --query "[?roleDefinitionName=='Cognitive Services OpenAI User'] | [0]" -o json | ConvertFrom-Json
+        if ($assignment) {
+            Write-Host "AOAI role assignment confirmed (attempt $i/$MaxRetries)." -ForegroundColor Green
+            return
+        }
+
+        if ($i -lt $MaxRetries) {
+            Write-Host "AOAI role assignment not visible yet. Waiting ${RetryIntervalSeconds}s (attempt $i/$MaxRetries)..." -ForegroundColor Yellow
+            Start-Sleep -Seconds $RetryIntervalSeconds
+        }
+    }
+
+    Write-Error "AOAI role assignment did not propagate within the expected time window."
+    exit 1
+}
+
 # Deploy Bicep template if not skipping
+$deploymentOutput = $null
 if (-not $SkipDeploy) {
     Write-Host "Deploying Bicep template..." -ForegroundColor Cyan
-    az deployment sub create --location japaneast --template-file main.bicep --parameters parameters.json
-    
-    if ($LASTEXITCODE -ne 0) {
+    $deploymentRaw = az deployment sub create --location japaneast --template-file main.bicep --parameters parameters.json -o json
+
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($deploymentRaw)) {
         Write-Error "Bicep deployment failed."
         exit 1
+    }
+
+    $deploymentOutput = $deploymentRaw | ConvertFrom-Json
+} else {
+    Write-Host "SkipDeploy is enabled. Retrieving latest deployment outputs for AOAI checks..." -ForegroundColor Yellow
+    $deploymentName = az deployment sub list --query "[0].name" -o tsv
+    if (-not [string]::IsNullOrWhiteSpace($deploymentName)) {
+        $deploymentRaw = az deployment sub show --name $deploymentName -o json
+        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($deploymentRaw)) {
+            $deploymentOutput = $deploymentRaw | ConvertFrom-Json
+        }
+    }
+}
+
+if ($deploymentOutput) {
+    $aoaiEndpoint = $deploymentOutput.properties.outputs.aoaiEndpoint.value
+    $uamiClientId = $deploymentOutput.properties.outputs.uamiClientId.value
+    $uamiPrincipalId = $deploymentOutput.properties.outputs.uamiPrincipalId.value
+    $aoaiResourceId = $deploymentOutput.properties.outputs.aoaiResourceId.value
+
+    if (-not [string]::IsNullOrWhiteSpace($aoaiEndpoint)) {
+        Write-Host "AOAI endpoint: $aoaiEndpoint" -ForegroundColor Green
+        Write-Host "UAMI client ID: $uamiClientId" -ForegroundColor Green
+        Confirm-AoaiRoleAssignment -PrincipalId $uamiPrincipalId -AoaiResourceId $aoaiResourceId
     }
 }
 
