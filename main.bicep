@@ -87,6 +87,9 @@ param aoaiSkuName string = 'S0'
 ])
 param aoaiPublicNetworkAccess string = 'Enabled'
 
+@description('Allowed public IP ranges for AOAI access')
+param aoaiAllowedIpRanges array = []
+
 @description('Azure OpenAI API version for Dify runtime')
 param aoaiApiVersion string = '2024-10-21'
 
@@ -224,6 +227,7 @@ module aoaiModule './modules/aoai.bicep' = if (useEntraIdForAoai) {
     aoaiAccountName: '${aoaiAccountBase}${rgNameHex}'
     aoaiSkuName: aoaiSkuName
     aoaiPublicNetworkAccess: aoaiPublicNetworkAccess
+    aoaiAllowedIpRanges: aoaiAllowedIpRanges
     aoaiDeployments: [
       {
         name: aoaiChatDeploymentName

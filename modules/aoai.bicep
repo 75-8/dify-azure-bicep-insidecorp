@@ -17,6 +17,9 @@ param aoaiPublicNetworkAccess string = 'Enabled'
 @description('AOAI deployment definitions')
 param aoaiDeployments array
 
+@description('Allowed public IP ranges for AOAI access. Empty means unrestricted when public access is enabled')
+param aoaiAllowedIpRanges array = []
+
 resource aoaiAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: aoaiAccountName
   location: location
@@ -27,6 +30,12 @@ resource aoaiAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   properties: {
     customSubDomainName: aoaiAccountName
     publicNetworkAccess: aoaiPublicNetworkAccess
+    networkAcls: {
+      defaultAction: empty(aoaiAllowedIpRanges) ? 'Allow' : 'Deny'
+      ipRules: [for ip in aoaiAllowedIpRanges: {
+        value: ip
+      }]
+    }
   }
 }
 
