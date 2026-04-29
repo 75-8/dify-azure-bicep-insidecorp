@@ -71,54 +71,6 @@ param difyWebImage string = 'langgenius/dify-web:1.13.3'
 @description('Dify plugin daemon image')
 param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.5.3-local'
 
-@description('Whether to use Entra ID authentication for Azure OpenAI')
-param useEntraIdForAoai bool = true
-
-@description('Azure OpenAI account name base')
-param aoaiAccountBase string = 'aoaidify'
-
-@description('Azure OpenAI SKU name')
-param aoaiSkuName string = 'S0'
-
-@description('Azure OpenAI public network access setting')
-@allowed([
-  'Enabled'
-  'Disabled'
-])
-param aoaiPublicNetworkAccess string = 'Enabled'
-
-@description('Allowed public IP ranges for AOAI access')
-param aoaiAllowedIpRanges array = []
-
-@description('Azure OpenAI API version for Dify runtime')
-param aoaiApiVersion string = '2024-10-21'
-
-@description('Azure OpenAI chat deployment name')
-param aoaiChatDeploymentName string = 'chat'
-
-@description('Azure OpenAI chat model name')
-param aoaiChatModelName string = 'gpt-4o-mini'
-
-@description('Azure OpenAI chat model version')
-param aoaiChatModelVersion string = '2024-07-18'
-
-@description('Azure OpenAI chat model capacity')
-param aoaiChatModelCapacity int = 10
-
-@description('Azure OpenAI embedding deployment name')
-param aoaiEmbeddingDeploymentName string = 'embedding'
-
-@description('Azure OpenAI embedding model name')
-param aoaiEmbeddingModelName string = 'text-embedding-3-large'
-
-@description('Azure OpenAI embedding model version')
-param aoaiEmbeddingModelVersion string = '1'
-
-@description('Azure OpenAI embedding model capacity')
-param aoaiEmbeddingModelCapacity int = 10
-
-@description('Dify user assigned managed identity name')
-param difyUamiName string = 'dify-uami'
 
 // Create resource group
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
@@ -219,42 +171,6 @@ module redisModule './modules/redis-cache.bicep' = if (isAcaEnabled) {
   }
 }
 
-module aoaiModule './modules/aoai.bicep' = if (useEntraIdForAoai) {
-  name: 'aoaiDeploy'
-  scope: rg
-  params: {
-    location: location
-    aoaiAccountName: '${aoaiAccountBase}${rgNameHex}'
-    aoaiSkuName: aoaiSkuName
-    aoaiPublicNetworkAccess: aoaiPublicNetworkAccess
-    aoaiAllowedIpRanges: aoaiAllowedIpRanges
-    aoaiDeployments: [
-      {
-        name: aoaiChatDeploymentName
-        modelName: aoaiChatModelName
-        modelVersion: aoaiChatModelVersion
-        capacity: aoaiChatModelCapacity
-      }
-      {
-        name: aoaiEmbeddingDeploymentName
-        modelName: aoaiEmbeddingModelName
-        modelVersion: aoaiEmbeddingModelVersion
-        capacity: aoaiEmbeddingModelCapacity
-      }
-    ]
-  }
-}
-
-module identityRbacModule './modules/identity-rbac.bicep' = if (useEntraIdForAoai) {
-  name: 'identityRbacDeploy'
-  scope: rg
-  params: {
-    location: location
-    uamiName: difyUamiName
-    aoaiResourceId: aoaiModule.outputs.aoaiResourceId
-  }
-}
-
 // Deploy ACA environment and apps
 module acaModule './modules/aca-env.bicep' = {
   name: 'acaEnvDeploy'
@@ -289,19 +205,8 @@ module acaModule './modules/aca-env.bicep' = {
     difyPluginDaemonImage: difyPluginDaemonImage
     blobEndpoint: storageModule.outputs.blobEndpoint
     allowedIngressCidrs: allowedIngressCidrs
-    useEntraIdForAoai: useEntraIdForAoai
-    difyIdentityResourceId: useEntraIdForAoai ? identityRbacModule.outputs.uamiResourceId : ''
-    difyIdentityClientId: useEntraIdForAoai ? identityRbacModule.outputs.uamiClientId : ''
-    aoaiEndpoint: useEntraIdForAoai ? aoaiModule.outputs.aoaiEndpoint : ''
-    aoaiApiVersion: aoaiApiVersion
-    aoaiChatDeployment: aoaiChatDeploymentName
-    aoaiEmbeddingDeployment: aoaiEmbeddingDeploymentName
   }
 }
 
-// Post-deployment outputs
+// Post-deployment output
 output difyAppUrl string = acaModule.outputs.difyAppUrl
-output aoaiEndpoint string = useEntraIdForAoai ? aoaiModule.outputs.aoaiEndpoint : ''
-output uamiClientId string = useEntraIdForAoai ? identityRbacModule.outputs.uamiClientId : ''
-output uamiPrincipalId string = useEntraIdForAoai ? identityRbacModule.outputs.uamiPrincipalId : ''
-output aoaiResourceId string = useEntraIdForAoai ? aoaiModule.outputs.aoaiResourceId : ''

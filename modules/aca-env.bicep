@@ -92,27 +92,6 @@ param allowedIngressCidrs array = [
   '10.0.0.0/8'
 ]
 
-@description('Whether to use Entra ID authentication for Azure OpenAI')
-param useEntraIdForAoai bool = true
-
-@description('Dify user assigned managed identity resource ID')
-param difyIdentityResourceId string = ''
-
-@description('Dify user assigned managed identity client ID')
-param difyIdentityClientId string = ''
-
-@description('Azure OpenAI endpoint')
-param aoaiEndpoint string = ''
-
-@description('Azure OpenAI API version')
-param aoaiApiVersion string = '2024-10-21'
-
-@description('Azure OpenAI chat deployment name')
-param aoaiChatDeployment string = ''
-
-@description('Azure OpenAI embedding deployment name')
-param aoaiEmbeddingDeployment string = ''
-
 // Create Log Analytics workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: acaLogaName
@@ -443,14 +422,6 @@ resource sandboxApp 'Microsoft.App/containerApps@2023-05-01' = {
 resource workerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'worker'
   location: location
-  identity: useEntraIdForAoai ? {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${difyIdentityResourceId}': {}
-    }
-  } : {
-    type: 'None'
-  }
   properties: {
     environmentId: acaEnv.id
     configuration: {}
@@ -580,30 +551,6 @@ resource workerApp 'Microsoft.App/containerApps@2023-05-01' = {
               name: 'INNER_API_KEY_FOR_PLUGIN'
               value: '-QaHbTe77CtuXmsfyhR7+vRjI/+XbV1AaFy691iy+kGDv2Jvy0/eAh8Y1'
             }
-            {
-              name: 'AZURE_OPENAI_ENDPOINT'
-              value: useEntraIdForAoai ? aoaiEndpoint : ''
-            }
-            {
-              name: 'AZURE_OPENAI_API_VERSION'
-              value: useEntraIdForAoai ? aoaiApiVersion : ''
-            }
-            {
-              name: 'AZURE_OPENAI_CHAT_DEPLOYMENT_NAME'
-              value: useEntraIdForAoai ? aoaiChatDeployment : ''
-            }
-            {
-              name: 'AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME'
-              value: useEntraIdForAoai ? aoaiEmbeddingDeployment : ''
-            }
-            {
-              name: 'AZURE_CLIENT_ID'
-              value: useEntraIdForAoai ? difyIdentityClientId : ''
-            }
-            {
-              name: 'AZURE_OPENAI_API_KEY'
-              value: useEntraIdForAoai ? '' : ''
-            }
           ]
         }
       ]
@@ -629,14 +576,6 @@ resource workerApp 'Microsoft.App/containerApps@2023-05-01' = {
 resource apiApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'api'
   location: location
-  identity: useEntraIdForAoai ? {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${difyIdentityResourceId}': {}
-    }
-  } : {
-    type: 'None'
-  }
   properties: {
     environmentId: acaEnv.id
     configuration: {
@@ -866,30 +805,6 @@ resource apiApp 'Microsoft.App/containerApps@2023-05-01' = {
             {
               name: 'INNER_API_KEY_FOR_PLUGIN'
               value: '-QaHbTe77CtuXmsfyhR7+vRjI/+XbV1AaFy691iy+kGDv2Jvy0/eAh8Y1'
-            }
-            {
-              name: 'AZURE_OPENAI_ENDPOINT'
-              value: useEntraIdForAoai ? aoaiEndpoint : ''
-            }
-            {
-              name: 'AZURE_OPENAI_API_VERSION'
-              value: useEntraIdForAoai ? aoaiApiVersion : ''
-            }
-            {
-              name: 'AZURE_OPENAI_CHAT_DEPLOYMENT_NAME'
-              value: useEntraIdForAoai ? aoaiChatDeployment : ''
-            }
-            {
-              name: 'AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME'
-              value: useEntraIdForAoai ? aoaiEmbeddingDeployment : ''
-            }
-            {
-              name: 'AZURE_CLIENT_ID'
-              value: useEntraIdForAoai ? difyIdentityClientId : ''
-            }
-            {
-              name: 'AZURE_OPENAI_API_KEY'
-              value: useEntraIdForAoai ? '' : ''
             }
           ]
         }

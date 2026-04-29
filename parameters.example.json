@@ -25,47 +25,6 @@
     },
     "isAcaEnabled": {
       "value": true
-    },
-    "useEntraIdForAoai": {
-      "value": true
-    },
-    "aoaiAccountBase": {
-      "value": "aoaidify"
-    },
-    "aoaiSkuName": {
-      "value": "S0"
-    },
-    "aoaiPublicNetworkAccess": {
-      "value": "Enabled"
-    },
-    "aoaiAllowedIpRanges": {
-      "value": [
-        "10.0.0.0/8"
-      ]
-    },
-    "aoaiApiVersion": {
-      "value": "2024-10-21"
-    },
-    "aoaiChatDeploymentName": {
-      "value": "chat"
-    },
-    "aoaiChatModelName": {
-      "value": "gpt-4o-mini"
-    },
-    "aoaiChatModelVersion": {
-      "value": "2024-07-18"
-    },
-    "aoaiEmbeddingDeploymentName": {
-      "value": "embedding"
-    },
-    "aoaiEmbeddingModelName": {
-      "value": "text-embedding-3-large"
-    },
-    "aoaiEmbeddingModelVersion": {
-      "value": "1"
-    },
-    "difyUamiName": {
-      "value": "dify-uami"
     }
   }
 }

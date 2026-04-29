@@ -4,15 +4,17 @@
 
 本仕様は、既存の Bicep 構成に **Azure OpenAI (AOAI)** と **Entra ID (Managed Identity) 認証**を組み込み、Dify が API キーではなくトークンベースで AOAI に接続できるようにするための実装計画を定義する。
 
+また、外部アクセス制限は Azure RBAC ではなく **NSG（Network Security Group）によるネットワーク制御**を主軸とする。
+
 ### 目的
 - Dify（主に `api` / `worker`）から AOAI への通信を Entra ID 認証へ切替する。
 - 追加リソースを Bicep モジュール化し、`main.bicep` から一貫してデプロイできるようにする。
-- `deploy.ps1` に、AOAI 追加に伴う事後設定（必要に応じた RBAC 伝播待ち・疎通確認）を実装する。
+- `deploy.ps1` に、AOAI 追加に伴う事後設定（必要に応じた NSG 適用確認・疎通確認）を実装する。
 
 ## 2. スコープ
 
 ### 対象
-- `modules/` 配下への新規モジュール追加（AOAI / Managed Identity / RBAC）。
+- `modules/` 配下への新規モジュール追加（AOAI / Managed Identity / RBAC / NSG）。
 - `main.bicep` へのパラメータ追加と新規モジュール呼び出し追加。
 - `modules/aca-env.bicep` への入力追加（Dify コンテナの AOAI 関連環境変数、Managed Identity 割当）。
 - `deploy.ps1` への AOAI 関連の補助処理追加。
@@ -28,8 +30,9 @@
 2. AOAI 内にモデルデプロイ（例: `gpt-4o-mini` / `text-embedding-3-large`）を作成。
 3. Dify 用の User Assigned Managed Identity (UAMI) を作成。
 4. `api` / `worker` Container App に UAMI を割り当て。
-5. UAMI に AOAI スコープで `Cognitive Services OpenAI User` ロールを付与。
-6. Dify の環境変数を Azure OpenAI + Entra ID 方式に合わせて設定（API キー未使用）。
+5. UAMI に AOAI スコープで `Cognitive Services OpenAI User` ロールを付与（認証用途のみ）。
+6. 外部アクセス制限は NSG で実施し、公開経路の送信元 CIDR を制御。
+7. Dify の環境変数を Azure OpenAI + Entra ID 方式に合わせて設定（API キー未使用）。
 
 ## 4. 変更方針（ファイル別）
 
@@ -81,6 +84,11 @@
 - スコープは AOAI アカウント単位。
 - 必要がない限りサブスクリプション/リソースグループスコープ付与はしない。
 
+### ネットワーク制御方針（重要）
+- RBAC は AOAI 認証可否（データプレーン権限）のみを制御し、ネットワーク到達性の制御には使わない。
+- 外部アクセス制限は NSG で実施する。
+- 公開経路に接続するサブネット（例: Ingress 側サブネット）へ NSG を関連付け、許可 CIDR のみ許容する。
+
 ## 4.3 変更: `modules/aca-env.bicep`
 
 ### 追加パラメータ案
@@ -127,14 +135,13 @@
 ## 4.5 変更: `deploy.ps1`
 
 ### 目的
-- Bicep デプロイ後に RBAC 伝播遅延を考慮した検証を追加。
+- Bicep デプロイ後に NSG 適用状態を確認し、外部アクセス制限が期待どおりであることを検証する。
 
 ### 追加処理案
-1. `az deployment sub create` 後、出力から `aoaiEndpoint` / `uamiClientId` を取得。
-2. `az role assignment list` で UAMI の AOAI ロール付与を確認。
-3. 必要に応じて待機リトライ（例: 30秒 x 最大10回）。
-4. 任意の疎通確認コマンド（管理プレーン確認）を追加。
-   - 実データプレーン呼び出しはテスト段階では任意。
+1. `az deployment sub create` 後、出力から `aoaiEndpoint` / `uamiClientId` / `nsgName`（または NSG resourceId）を取得。
+2. `az network nsg rule list` で許可 CIDR / Deny ルールを確認。
+3. 必要に応じて到達性確認（許可元IPは接続可・非許可元IPは接続不可）を実施。
+4. RBAC 確認は認証用途の最小限チェックに限定し、外部公開制限の主判定には使わない。
 
 ### 注意点
 - `deploy.ps1` は現在ファイルアップロード処理を含むため、AOAI 関連チェックを追加する位置を明確化（Bicep 成功直後を推奨）。
@@ -146,6 +153,8 @@
 - `aoaiAccountBase`: `aoaidify`
 - `aoaiSkuName`: `S0`
 - `aoaiPublicNetworkAccess`: `Enabled`（将来的に Private Endpoint 化を検討）
+- `publicAllowedCidrs`: `["10.0.0.0/8"]`（公開経路で許可する送信元CIDR）
+- `nsgName`: `dify-ingress-nsg`
 - `aoaiApiVersion`: `2024-10-21`（利用可能バージョンに合わせて更新）
 - `aoaiChatDeploymentName`: `chat`
 - `aoaiChatModelName`: `gpt-4o-mini`
@@ -159,9 +168,10 @@
 2. `modules/identity-rbac.bicep` を作成し、UAMI + RBAC を定義。
 3. `main.bicep` に新規パラメータとモジュール連携を追加。
 4. `modules/aca-env.bicep` に UAMI 割当と AOAI 関連 env を追加。
-5. `deploy.ps1` に RBAC 伝播確認ロジックを追加。
-6. `parameters.example.json` と README を更新。
-7. What-If/本番デプロイで検証。
+5. `modules/vnet.bicep`（または NSG 専用モジュール）に NSG とルールを追加し、対象サブネットへ関連付け。
+6. `deploy.ps1` に NSG ルール確認ロジックを追加。
+7. `parameters.example.json` と README を更新。
+8. What-If/本番デプロイで検証。
 
 ## 7. テスト計画
 
@@ -170,7 +180,11 @@
 - `az deployment sub what-if --location <region> --template-file main.bicep --parameters parameters.json`
 
 ### 権限
-- UAMI に `Cognitive Services OpenAI User` が付与されていること。
+- UAMI に `Cognitive Services OpenAI User` が付与されていること（認証目的）。
+
+### ネットワーク
+- NSG が対象サブネットに関連付け済みであること。
+- 許可 CIDR 以外からのアクセスが拒否されること。
 
 ### アプリ設定
 - `api` / `worker` に UAMI が割り当て済みであること。
@@ -187,19 +201,19 @@
 
 ## 9. リスクと対策
 
-1. **RBAC 伝播遅延**
-   - 対策: `deploy.ps1` でリトライ待機を実装。
+1. **NSG ルール設計ミス（過剰遮断/過剰許可）**
+   - 対策: 許可CIDRをパラメータ化し、`what-if` と疎通試験で検証。
 2. **Dify の環境変数仕様差分（バージョン依存）**
    - 対策: 実装時に対象 Dify バージョンの公式仕様と突合。
 3. **AOAI モデル/バージョン変更**
    - 対策: モデル名・バージョンの完全パラメータ化。
-4. **ネットワーク制限時の到達性不足**
-   - 対策: 初期は Public access で動作確認し、その後 Private Endpoint を段階導入。
+4. **NSG 適用漏れによる意図しない公開**
+   - 対策: NSG の関連付け状態を `deploy.ps1` と運用監査で継続確認。
 
 ## 10. 受け入れ基準
 
 - Bicep デプロイで AOAI/UAMI/RBAC が一貫して作成される。
 - `api` と `worker` が UAMI を利用し、AOAI に Entra ID でアクセスできる。
-- `deploy.ps1` が AOAI 関連チェックを実行し、異常時に明確に失敗する。
+- `deploy.ps1` が NSG ルール/関連付けを確認し、異常時に明確に失敗する。
 - 既存リソース（PostgreSQL/Storage/Redis/ACA）の動作を阻害しない。
 
