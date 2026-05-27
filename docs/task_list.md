@@ -5,7 +5,13 @@
 
 参照仕様:
 - `docs/spec/spec.md`
-- `docs/spec/*.md`
+- `docs/spec/10_network.md`
+- `docs/spec/20_auth.md`
+- `docs/spec/30_api.md`
+- `docs/spec/40_aoai.md`
+- `docs/spec/50_aca.md`
+- `docs/spec/60_db.md`
+- `docs/spec/70_bicep.md`
 - `docs/current-architecture-spec.yaml`
 - `docs/security_guardrails.md`
 
