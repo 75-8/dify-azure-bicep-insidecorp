@@ -11,6 +11,8 @@
 │   ├── aoai-entra-auth-spec.md
 │   ├── current-architecture-spec.yaml
 │   ├── dify-azure-infra.drawio
+│   ├── directory.md
+│   ├── security_guardrails.md
 │   └── task_list.md
 ├── main.bicep
 ├── modules

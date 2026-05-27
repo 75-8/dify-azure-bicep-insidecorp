@@ -2,29 +2,28 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "location": {
-      "value": "japaneast"
-    },
-    "resourceGroupPrefix": {
-      "value": "rg-dify"
-    },
-    "pgsqlUser": {
-      "value": "adminuser"
-    },
-    "pgsqlPassword": {
-      "value": "YOUR_SECURE_PASSWORD_HERE"
-    },
-    "isProvidedCert": {
-      "value": false
-    },
-    "acaCertPassword": {
-      "value": "YOUR_CERT_PASSWORD_HERE"
-    },
-    "acaAppMinCount": {
-      "value": 1
-    },
-    "isAcaEnabled": {
-      "value": true
-    }
+    "location": { "value": "japaneast" },
+    "resourceGroupPrefix": { "value": "rg-dify" },
+    "ipPrefix": { "value": "10.99" },
+    "storageAccountBase": { "value": "acadifytest" },
+    "storageAccountContainer": { "value": "dfy" },
+    "redisNameBase": { "value": "acadifyredis" },
+    "psqlFlexibleBase": { "value": "acadifypsql" },
+    "pgsqlUser": { "value": "adminuser" },
+    "pgsqlPassword": { "value": "REPLACE_WITH_SECURE_SECRET" },
+    "acaEnvName": { "value": "dify-aca-env" },
+    "acaLogaName": { "value": "dify-loga" },
+    "isProvidedCert": { "value": false },
+    "acaCertBase64Value": { "value": "" },
+    "acaCertPassword": { "value": "REPLACE_IF_CERT_USED" },
+    "acaDifyCustomerDomain": { "value": "dify.example.com" },
+    "acaAppMinCount": { "value": 1 },
+    "isAcaEnabled": { "value": true },
+    "allowedIngressCidrs": { "value": ["10.0.0.0/8"] },
+    "difyApiImage": { "value": "langgenius/dify-api:1.13.3" },
+    "difySandboxImage": { "value": "langgenius/dify-sandbox:0.2.14" },
+    "difyWebImage": { "value": "langgenius/dify-web:1.13.3" },
+    "difyPluginDaemonImage": { "value": "langgenius/dify-plugin-daemon:0.5.3-local" },
+    "fileShareNames": { "value": ["nginx", "sandbox", "ssrfproxy", "pluginstorage"] }
   }
 }

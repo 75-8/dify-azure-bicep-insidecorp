@@ -35,7 +35,7 @@ if (-not $loginStatus) {
 # Deploy Bicep template if not skipping
 if (-not $SkipDeploy) {
     Write-Host "Deploying Bicep template..." -ForegroundColor Cyan
-    az deployment sub create --location japaneast --template-file main.bicep --parameters parameters.json
+    az deployment sub create --location $location --template-file main.bicep --parameters parameters.json
     
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Bicep deployment failed."
@@ -127,7 +127,7 @@ try {
     $sasToken = $null
 }
 
-Write-Host "SAS Token: $sasToken"
+Write-Host "SAS token generated and stored in memory (value hidden)" -ForegroundColor Green
 
 # Check for azcopy existence and install if needed
 $azcopyPath = $null
