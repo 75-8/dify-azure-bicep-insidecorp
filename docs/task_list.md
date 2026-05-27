@@ -12,6 +12,7 @@
 - `docs/spec/50_aca.md`
 - `docs/spec/60_db.md`
 - `docs/spec/70_bicep.md`
+- `docs/spec/80_secret.md`
 - `docs/current-architecture-spec.yaml`
 - `docs/security_guardrails.md`
 
