@@ -1,7 +1,7 @@
 # spec
 
 本ファイルは全体境界と統合ルールを定義する。
-詳細は `docs/spec/10_network.md` 〜 `docs/spec/80_secret.md` を参照する。
+詳細は `docs/spec/10_network.md` 〜 `docs/spec/80_bicep.md` を参照する。
 
 ## 全体方針
 - 公開入口は Gateway に限定する。
@@ -16,8 +16,8 @@
 4. 40_aoai
 5. 50_aca
 6. 60_db
-7. 70_bicep
-8. 80_secret
+7. 70_secret
+8. 80_bicep
 
 
 ## 経路アーキテクチャ（要点）
