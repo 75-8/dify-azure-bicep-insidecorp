@@ -18,3 +18,8 @@
 6. 60_db
 7. 70_bicep
 8. 80_secret
+
+
+## 経路アーキテクチャ（要点）
+- Dify UI 経路: App Gateway + OAuth2 Proxy
+- Dify API(`/v1`) 経路: APIM
