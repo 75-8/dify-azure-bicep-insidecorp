@@ -26,7 +26,7 @@ param pgsqlUser string = 'user'
 
 @description('PostgreSQL password')
 @secure()
-param pgsqlPassword string = '#QWEASDasdqwe'
+param pgsqlPassword string
 
 @description('ACA environment name')
 param acaEnvName string = 'dify-aca-env'
@@ -43,7 +43,7 @@ param acaCertBase64Value string = ''
 
 @description('Certificate password')
 @secure()
-param acaCertPassword string = 'password'
+param acaCertPassword string = ''
 
 @description('Dify custom domain')
 param acaDifyCustomerDomain string = 'dify.example.com'
@@ -72,6 +72,14 @@ param difyWebImage string = 'langgenius/dify-web:1.13.3'
 param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.5.3-local'
 
 
+@description('File share names used by Dify components')
+param fileShareNames array = [
+  'nginx'
+  'sandbox'
+  'ssrfproxy'
+  'pluginstorage'
+]
+
 // Create resource group
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: '${resourceGroupPrefix}-${location}'
@@ -82,7 +90,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
 var rgNameHex = uniqueString(subscription().id, rg.name)
 
 // Deploy network-related resources
-module vnetModule './modules/vnet.bicep' = {
+module networkModule './modules/network.bicep' = {
   name: 'vnetDeploy'
   scope: rg
   params: {
@@ -99,53 +107,12 @@ module storageModule './modules/storage.bicep' = {
     location: location
     storageAccountName: '${storageAccountBase}${rgNameHex}'
     containerName: storageAccountContainer
-    privateLinkSubnetId: vnetModule.outputs.privateLinkSubnetId
-    vnetId: vnetModule.outputs.vnetId
+    privateLinkSubnetId: networkModule.outputs.privateLinkSubnetId
+    vnetId: networkModule.outputs.vnetId
+    fileShareNames: fileShareNames
   }
 }
 
-// Deploy file shares
-module nginxFileShareModule './modules/fileshare.bicep' = {
-  name: 'nginxFileShareDeploy'
-  scope: rg
-  params: {
-    storageAccountName: storageModule.outputs.storageAccountName
-    shareName: 'nginx'
-    localMountDir: 'mountfiles/nginx'
-  }
-}
-
-module sandboxFileShareModule './modules/fileshare.bicep' = {
-  name: 'sandboxFileShareDeploy'
-  scope: rg
-  params: {
-    storageAccountName: storageModule.outputs.storageAccountName
-    shareName: 'sandbox'
-    localMountDir: 'mountfiles/sandbox'
-  }
-}
-
-module ssrfProxyFileShareModule './modules/fileshare.bicep' = {
-  name: 'ssrfProxyFileShareDeploy'
-  scope: rg
-  params: {
-    storageAccountName: storageModule.outputs.storageAccountName
-    shareName: 'ssrfproxy'
-    localMountDir: 'mountfiles/ssrfproxy'
-  }
-}
-
-module pluginStorageFileShareModule './modules/fileshare.bicep' = {
-  name: 'pluginStorageFileShareDeploy'
-  scope: rg
-  params: {
-    storageAccountName: storageModule.outputs.storageAccountName
-    shareName: 'pluginstorage'
-    localMountDir: 'mountfiles/pluginstorage'
-  }
-}
-
-// Deploy PostgreSQL server
 module postgresqlModule './modules/postgresql.bicep' = {
   name: 'postgresqlDeploy'
   scope: rg
@@ -154,8 +121,8 @@ module postgresqlModule './modules/postgresql.bicep' = {
     serverName: '${psqlFlexibleBase}${rgNameHex}'
     administratorLogin: pgsqlUser
     administratorLoginPassword: pgsqlPassword
-    postgresSubnetId: vnetModule.outputs.postgresSubnetId
-    vnetId: vnetModule.outputs.vnetId
+    postgresSubnetId: networkModule.outputs.postgresSubnetId
+    vnetId: networkModule.outputs.vnetId
   }
 }
 
@@ -166,8 +133,8 @@ module redisModule './modules/redis-cache.bicep' = if (isAcaEnabled) {
   params: {
     location: location
     redisName: '${redisNameBase}${rgNameHex}'
-    privateLinkSubnetId: vnetModule.outputs.privateLinkSubnetId
-    vnetId: vnetModule.outputs.vnetId
+    privateLinkSubnetId: networkModule.outputs.privateLinkSubnetId
+    vnetId: networkModule.outputs.vnetId
   }
 }
 
@@ -179,7 +146,7 @@ module acaModule './modules/aca-env.bicep' = {
     location: location
     acaEnvName: acaEnvName
     acaLogaName: acaLogaName
-    acaSubnetId: vnetModule.outputs.acaSubnetId
+    acaSubnetId: networkModule.outputs.acaSubnetId
     isProvidedCert: isProvidedCert
     acaCertBase64Value: acaCertBase64Value
     acaCertPassword: acaCertPassword
@@ -188,10 +155,10 @@ module acaModule './modules/aca-env.bicep' = {
     storageAccountName: storageModule.outputs.storageAccountName
     storageAccountKey: storageModule.outputs.storageAccountKey
     storageContainerName: storageAccountContainer
-    nginxShareName: nginxFileShareModule.outputs.shareName
-    sandboxShareName: sandboxFileShareModule.outputs.shareName
-    ssrfProxyShareName: ssrfProxyFileShareModule.outputs.shareName
-    pluginStorageShareName: pluginStorageFileShareModule.outputs.shareName
+    nginxShareName: fileShareNames[0]
+    sandboxShareName: fileShareNames[1]
+    ssrfProxyShareName: fileShareNames[2]
+    pluginStorageShareName: fileShareNames[3]
     postgresServerFqdn: postgresqlModule.outputs.serverFqdn
     postgresAdminLogin: pgsqlUser
     postgresAdminPassword: pgsqlPassword
