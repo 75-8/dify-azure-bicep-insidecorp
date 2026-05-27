@@ -21,6 +21,7 @@
 - `postgresql` (`modules/postgresql.bicep`)
 - `redis-cache` (`modules/redis-cache.bicep`)
 - `aoai` (`modules/aoai.bicep` 想定)
+- `api`（将来 `modules/apim.bicep` 想定 / 先行設計のみ）
 
 ## 3. 境界定義（責務）
 
@@ -33,7 +34,8 @@
 1. `vnet` がサブネットを提供し、`network-nsg` が関連付ける。
 2. `app-gateway` は `aca-env` の内部エンドポイントへ転送する。
 3. `aca-env` は `storage`/`postgresql`/`redis-cache`/`aoai` の接続先情報を受け取る。
-4. `aoai` の API Key は IaC では扱わない。運用手順で手動投入する。
+4. 将来の公開 API 経路は `api` ドメイン（APIM）で受け、OAuth 2.0 で保護する。
+5. `aoai` の API Key は IaC では扱わない。運用手順で手動投入する。
 
 ## 5. 受け入れ基準（全体）
 
