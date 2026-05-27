@@ -26,7 +26,7 @@ param pgsqlUser string = 'user'
 
 @description('PostgreSQL password')
 @secure()
-param pgsqlPassword string = '#QWEASDasdqwe'
+param pgsqlPassword string
 
 @description('ACA environment name')
 param acaEnvName string = 'dify-aca-env'
@@ -43,7 +43,7 @@ param acaCertBase64Value string = ''
 
 @description('Certificate password')
 @secure()
-param acaCertPassword string = 'password'
+param acaCertPassword string = ''
 
 @description('Dify custom domain')
 param acaDifyCustomerDomain string = 'dify.example.com'
@@ -71,6 +71,14 @@ param difyWebImage string = 'langgenius/dify-web:1.13.3'
 @description('Dify plugin daemon image')
 param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.5.3-local'
 
+
+@description('File share names used by Dify components')
+param fileShareNames array = [
+  'nginx'
+  'sandbox'
+  'ssrfproxy'
+  'pluginstorage'
+]
 
 // Create resource group
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
@@ -101,12 +109,7 @@ module storageModule './modules/storage.bicep' = {
     containerName: storageAccountContainer
     privateLinkSubnetId: networkModule.outputs.privateLinkSubnetId
     vnetId: networkModule.outputs.vnetId
-    fileShareNames: [
-      'nginx'
-      'sandbox'
-      'ssrfproxy'
-      'pluginstorage'
-    ]
+    fileShareNames: fileShareNames
   }
 }
 
@@ -152,10 +155,10 @@ module acaModule './modules/aca-env.bicep' = {
     storageAccountName: storageModule.outputs.storageAccountName
     storageAccountKey: storageModule.outputs.storageAccountKey
     storageContainerName: storageAccountContainer
-    nginxShareName: 'nginx'
-    sandboxShareName: 'sandbox'
-    ssrfProxyShareName: 'ssrfproxy'
-    pluginStorageShareName: 'pluginstorage'
+    nginxShareName: fileShareNames[0]
+    sandboxShareName: fileShareNames[1]
+    ssrfProxyShareName: fileShareNames[2]
+    pluginStorageShareName: fileShareNames[3]
     postgresServerFqdn: postgresqlModule.outputs.serverFqdn
     postgresAdminLogin: pgsqlUser
     postgresAdminPassword: pgsqlPassword
