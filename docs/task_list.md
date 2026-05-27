@@ -4,9 +4,10 @@
 各ネットワークを **NSG で保護**するために、現行リポジトリの実装差分を計画として整理したものです。
 
 参照仕様:
+- `docs/spec/spec.md`
+- `docs/spec/*.md`
 - `docs/current-architecture-spec.yaml`
 - `docs/security_guardrails.md`
-- `docs/aoai-entra-auth-spec.md`
 
 ---
 
