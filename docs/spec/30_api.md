@@ -28,3 +28,9 @@
 - **/ui 系リクエスト経路**: `Client -> App Gateway -> OAuth2 Proxy -> ACA(web/ui)`
 - **/v1 API リクエスト経路**: `Client -> APIM -> ACA(api)`
 - UI と API は経路・責務を分離し、ポリシーを独立管理する。
+
+
+## APIM 認証実装方針（/v1）
+- APIM 側は **Managed Identity** を使用する想定とする。
+- APIM からバックエンド（ACA api）呼び出し時は、必要に応じて MI ベース認証を適用する。
+- APIM のポリシーでトークン取得/付与方式を標準化し、手動シークレット配布を禁止する。

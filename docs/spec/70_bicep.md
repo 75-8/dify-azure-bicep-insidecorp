@@ -22,3 +22,8 @@
 5. storage/postgresql/redis
 6. aca-env
 7. api(apim) ※将来
+
+
+## APIM 拡張時の前提
+- `api(apim)` ドメイン実装時は APIM に Managed Identity を割り当てる。
+- APIM の外部IdP連携（OAuth2.0）と内部バックエンド連携（MI）を分離設計する。

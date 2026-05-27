@@ -23,3 +23,4 @@
 ## 経路アーキテクチャ（要点）
 - Dify UI 経路: App Gateway + OAuth2 Proxy
 - Dify API(`/v1`) 経路: APIM
+- APIM(`/v1`) 側は Managed Identity を使用する想定とする。
