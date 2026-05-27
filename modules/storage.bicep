@@ -130,4 +130,4 @@ resource filePrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/private
 output storageAccountName string = storageAccount.name
 output storageAccountKey string = listKeys(storageAccount.id, storageAccount.apiVersion).keys[0].value
 output blobEndpoint string = storageAccount.properties.primaryEndpoints.blob
-output fileShareNames array = [for share in fileShares: share.name]
+output fileShareNames array = fileShareNames
