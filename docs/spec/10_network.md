@@ -17,7 +17,7 @@
 - App Gateway backend は ACA internal endpoint を参照する。
 
 ## 未確認事項（spec未記載・コード記載）
-- `modules/network.bicep` では `AppGatewaySubnet` が未定義（`PrivateLinkSubnet`/`ACASubnet`/`PostgresSubnet` のみ定義）。
-- `modules/network.bicep` の VNet 名は `vnet-${location}` 固定命名。
-- `modules/network.bicep` の `PostgresSubnet` に `Microsoft.Storage` service endpoint が設定されている。
+- `infra/modules/network.bicep` では `AppGatewaySubnet` が未定義（`PrivateLinkSubnet`/`ACASubnet`/`PostgresSubnet` のみ定義）。
+- `infra/modules/network.bicep` の VNet 名は `vnet-${location}` 固定命名。
+- `infra/modules/network.bicep` の `PostgresSubnet` に `Microsoft.Storage` service endpoint が設定されている。
 

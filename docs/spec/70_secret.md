@@ -19,7 +19,7 @@
 ## 連携要件
 - `aca-env` は Container App Secret として Key Vault 参照を利用する。
 - `app-gateway` は証明書参照が必要な場合 Key Vault を参照する。
-- `deploy.ps1` はシークレット値を表示しない（マスク/非出力）。
+- `infra/deploy.ps1` はシークレット値を表示しない（マスク/非出力）。
 
 ## ローテーション要件
 - シークレットは定期ローテーションする。
@@ -33,7 +33,7 @@
 - ローテーション手順と復旧手順が文書化されている。
 
 ## 未確認事項（spec未記載・コード記載）
-- `modules/keyvaulte.bicep` は Key Vault を `publicNetworkAccess: 'Enabled'` で作成。
-- `modules/keyvaulte.bicep` は `enableRbacAuthorization` をパラメータ化（既定 `true`）。
+- `infra/modules/keyvaulte.bicep` は Key Vault を `publicNetworkAccess: 'Enabled'` で作成。
+- `infra/modules/keyvaulte.bicep` は `enableRbacAuthorization` をパラメータ化（既定 `true`）。
 - `modules` 配下で Key Vault シークレット作成・参照（Container Apps 側の Key Vault reference）までを行う定義は未確認。
 

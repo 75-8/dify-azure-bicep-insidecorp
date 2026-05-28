@@ -11,17 +11,17 @@
 ### 目的
 - Dify（主に `api` / `worker`）から AOAI への通信を Key 認証で安定運用する。
 - インターネット侵入は App Gateway + Entra 認証で制限し、WAF は利用しない。
-- 追加リソースを Bicep モジュール化し、`main.bicep` から一貫してデプロイできるようにする。
-- `deploy.ps1` に、AOAI 追加に伴う事後設定（必要に応じた NSG 適用確認・疎通確認）を実装する。
+- 追加リソースを Bicep モジュール化し、`infra/main.bicep` から一貫してデプロイできるようにする。
+- `infra/deploy.ps1` に、AOAI 追加に伴う事後設定（必要に応じた NSG 適用確認・疎通確認）を実装する。
 
 ## 2. スコープ
 
 ### 対象
-- `modules/` 配下への新規モジュール追加（AOAI / NSG）。
-- `main.bicep` へのパラメータ追加と新規モジュール呼び出し追加。
-- `modules/aca-env.bicep` への入力追加（Dify コンテナの AOAI 関連設定。ただし API Key は IaC で注入しない）。
-- `deploy.ps1` への AOAI 関連の補助処理追加。
-- `parameters.example.json` と `README.md` の追補（任意だが推奨）。
+- `infra/modules/` 配下への新規モジュール追加（AOAI / NSG）。
+- `infra/main.bicep` へのパラメータ追加と新規モジュール呼び出し追加。
+- `infra/modules/aca-env.bicep` への入力追加（Dify コンテナの AOAI 関連設定。ただし API Key は IaC で注入しない）。
+- `infra/deploy.ps1` への AOAI 関連の補助処理追加。
+- `infra/parameters.example.json` と `README.md` の追補（任意だが推奨）。
 
 ### 非対象
 - Dify アプリ本体コードの改修。
@@ -40,7 +40,7 @@
 
 ## 4. 変更方針（ファイル別）
 
-## 4.1 新規: `modules/aoai.bicep`
+## 4.1 新規: `infra/modules/aoai.bicep`
 
 ### 役割
 - AOAI アカウント作成。
@@ -66,7 +66,7 @@
 
 > 補足: モデルバージョンは更新頻度が高いため、パラメータ化を必須とし、固定値ハードコードを避ける。
 
-## 4.2 変更: `modules/aca-env.bicep`
+## 4.2 変更: `infra/modules/aca-env.bicep`
 
 ### 追加パラメータ案
 - `aoaiEndpoint` (string)
@@ -79,7 +79,7 @@
 2. Entra ID 前提の設定（`AZURE_CLIENT_ID` など）は本計画から除外。
 3. AOAI API Key は **人手で持ち込み**、IaC のパラメータ/環境変数/Secret 注入対象にしない。
 
-## 4.3 変更: `main.bicep`
+## 4.3 変更: `infra/main.bicep`
 
 ### 追加パラメータ案
 - `aoaiAccountBase` (string)
@@ -97,7 +97,7 @@
 ### 命名
 - 既存の `uniqueString(subscription().id, rg.name)` を流用し、グローバル一意性を担保。
 
-## 4.4 変更: `deploy.ps1`
+## 4.4 変更: `infra/deploy.ps1`
 
 ### 目的
 - Bicep デプロイ後に NSG 適用状態を確認し、外部アクセス制限が期待どおりであることを検証する。
@@ -110,10 +110,10 @@
 5. API Key は手動投入前提のため、IaC/CI ログにキー文字列を出さないことを確認。
 
 ### 注意点
-- `deploy.ps1` は現在ファイルアップロード処理を含むため、AOAI 関連チェックを追加する位置を明確化（Bicep 成功直後を推奨）。
+- `infra/deploy.ps1` は現在ファイルアップロード処理を含むため、AOAI 関連チェックを追加する位置を明確化（Bicep 成功直後を推奨）。
 - エラー時は既存と同様に `Write-Error` + `exit 1`。
 
-## 5. パラメータ設計（`parameters.example.json` 追補案）
+## 5. パラメータ設計（`infra/parameters.example.json` 追補案）
 
 - `aoaiAccountBase`: `aoaidify`
 - `aoaiSkuName`: `S0`
@@ -128,19 +128,19 @@
 
 ## 6. 実装ステップ
 
-1. `modules/aoai.bicep` を作成し、AOAI アカウント+デプロイを定義。
-2. `main.bicep` に新規パラメータとモジュール連携を追加。
-3. `modules/aca-env.bicep` に AOAI 接続先情報（endpoint/version/deployment）のみ追加。
-4. `modules/vnet.bicep`（または NSG 専用モジュール）に NSG とルールを追加し、対象サブネットへ関連付け。
-5. `deploy.ps1` に NSG ルール確認 + 機微情報非出力チェックを追加。
-6. `parameters.example.json` と README を更新。
+1. `infra/modules/aoai.bicep` を作成し、AOAI アカウント+デプロイを定義。
+2. `infra/main.bicep` に新規パラメータとモジュール連携を追加。
+3. `infra/modules/aca-env.bicep` に AOAI 接続先情報（endpoint/version/deployment）のみ追加。
+4. `infra/modules/vnet.bicep`（または NSG 専用モジュール）に NSG とルールを追加し、対象サブネットへ関連付け。
+5. `infra/deploy.ps1` に NSG ルール確認 + 機微情報非出力チェックを追加。
+6. `infra/parameters.example.json` と README を更新。
 7. What-If/本番デプロイで検証。
 
 ## 7. テスト計画
 
 ### IaC 構文
-- `az bicep build --file main.bicep`
-- `az deployment sub what-if --location <region> --template-file main.bicep --parameters parameters.json`
+- `az bicep build --file infra/main.bicep`
+- `az deployment sub what-if --location <region> --template-file infra/main.bicep --parameters parameters.json`
 
 ### ネットワーク
 - NSG が対象サブネットに関連付け済みであること。
@@ -174,12 +174,12 @@
 5. **Entra 認証設定ミスによる意図しない侵入許可**
    - 対策: App Gateway 側で認証必須ポリシーをテンプレート化し、デプロイ後に必ず検証。
 6. **NSG 適用漏れによる意図しない公開**
-   - 対策: NSG の関連付け状態を `deploy.ps1` と運用監査で継続確認。
+   - 対策: NSG の関連付け状態を `infra/deploy.ps1` と運用監査で継続確認。
 
 ## 10. 受け入れ基準
 
 - Bicep デプロイで AOAI が一貫して作成される。
 - `api` と `worker` が AOAI に Key 認証でアクセスできる。
-- `deploy.ps1` が Entra 認証設定と NSG ルール/関連付けを確認し、異常時に明確に失敗する。
+- `infra/deploy.ps1` が Entra 認証設定と NSG ルール/関連付けを確認し、異常時に明確に失敗する。
 - API Key が IaC パラメータやコンテナ環境変数として管理されていない。
 - 既存リソース（PostgreSQL/Storage/Redis/ACA）の動作を阻害しない。

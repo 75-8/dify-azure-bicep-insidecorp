@@ -1,12 +1,8 @@
 version: 1
 spec_name: dify-azure-bicep-current-architecture
 generated_from:
-  - main.bicep
-  - modules/vnet.bicep
-  - modules/storage.bicep
-  - modules/postgresql.bicep
-  - modules/redis-cache.bicep
-  - modules/aca-env.bicep
+  - infra/main.bicep
+  - infra/modules/*.bicep
 
 scope:
   deployment_scope: subscription
