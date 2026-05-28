@@ -24,3 +24,18 @@
 - Dify UI 経路: App Gateway + OAuth2 Proxy
 - Dify API(`/v1`) 経路: APIM
 - APIM(`/v1`) 側は Managed Identity を使用する想定とする。
+
+## modules 対応表（`docs/directory.md`準拠）
+
+| modules | ドメイン仕様書 | 備考 |
+|---|---|---|
+| `modules/network.bicep` | `docs/spec/10_network.md` | VNet/Subnet の定義 |
+| `modules/apim.bicep` | `docs/spec/30_api.md` | APIM（/v1 経路） |
+| `modules/keyvaulte.bicep` | `docs/spec/70_secret.md` | Key Vault 管理 |
+| `modules/aca-env.bicep` | `docs/spec/50_aca.md` | ACA Environment / Apps |
+| `modules/postgresql.bicep` | `docs/spec/60_db.md` | PostgreSQL |
+| `modules/redis-cache.bicep` | `docs/spec/60_db.md` | Redis |
+| `modules/storage.bicep` | `docs/spec/60_db.md` | Storage |
+
+> 目次（構成一覧）は `docs/directory.md` を正とし、本表は `docs/spec` からの参照用とする。
+

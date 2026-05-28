@@ -22,3 +22,8 @@
 - `/ui` は OAuth2 Proxy で認証を強制する。
 - `/v1` は APIM で OAuth 2.0 を強制する。
 - 認証境界を分離し、設定変更影響を局所化する。
+
+## 未確認事項（spec未記載・コード記載）
+- `modules` 配下に Entra/OIDC 認証設定を直接実装する Bicep 定義は現時点で未確認。
+- 認証強制の実体は `modules/apim.bicep` の APIM 作成までで、ポリシー/IdP連携設定は未確認。
+
