@@ -20,5 +20,5 @@
 
 ## 未確認事項（spec未記載・コード記載）
 - `modules` 配下に AOAI リソース作成モジュール（例: `aoai.bicep`）は現時点で未確認。
-- `modules/aca-env.bicep` には AOAI 接続情報パラメータ（endpoint/apiVersion/deployment）が未定義。
+- `infra/modules/aca-env.bicep` には AOAI 接続情報パラメータ（endpoint/apiVersion/deployment）が未定義。
 

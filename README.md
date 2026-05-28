@@ -17,7 +17,7 @@ Back-end components:
 - vectordb -> Azure Database for PostgreSQL
 - redis -> Azure Cache for Redis
 
-Before you provision Dify, please check and set the variables in parameters.json file.
+Before you provision Dify, please check and set the variables in infra/parameters.json file.
 
 ### Bicep Variables Documentation
 
@@ -25,20 +25,20 @@ This document provides detailed descriptions of the variables used in the Bicep 
 
 ### ⚠️ Security Notice
 
-**IMPORTANT**: The `parameters.json` file contains sensitive information such as database passwords and certificate passwords. 
+**IMPORTANT**: The `infra/parameters.json` file contains sensitive information such as database passwords and certificate passwords.
 
 Before deploying:
 
-1. **Copy the example file**: 
+1. **Copy the example file**:
    ```bash
-   cp parameters.example.json parameters.json
+   cp infra/parameters.example.json infra/parameters.json
    ```
 
-2. **Set secure passwords**: Edit `parameters.json` and replace the placeholder values with your own secure passwords:
+2. **Set secure passwords**: Edit `infra/parameters.json` and replace the placeholder values with your own secure passwords:
    - `pgsqlPassword`: PostgreSQL database password (minimum 8 characters, must include uppercase, lowercase, and numbers)
    - `acaCertPassword`: Certificate password (only required if `isProvidedCert` is `true`)
 
-3. **Do NOT commit** the `parameters.json` file to version control. It is already included in `.gitignore`.
+3. **Do NOT commit** the `infra/parameters.json` file to version control. It is already included in `.gitignore`.
 
 **Password Requirements**:
 - Use unique, strong passwords for each deployment
@@ -51,10 +51,10 @@ az login
 az account set --subscription <subscription-id>
 
 # Copy and configure parameters file
-cp parameters.example.json parameters.json
-# Edit parameters.json with your secure passwords
+cp infra/parameters.example.json infra/parameters.json
+# Edit infra/parameters.json with your secure passwords
 
-./deploy.ps1
+./infra/deploy.ps1
 ```
 
 ### Deployment Parameters
@@ -232,4 +232,4 @@ Bicep の現在構成を仕様書として整理した YAML を追加しまし�
 - `docs/aoai-entra-auth-spec.md`（AOAI + Entra ID 拡張の実装計画）
 - `docs/security_guardrails.md`（セキュリティ境界の現状整理と NSG ベース制御の提案）
 
-> これらは **設計仕様** です。現行の `main.bicep` / `modules/` 実装との差分がある場合は、仕様を正として段階的に実装へ反映してください。
+> これらは **設計仕様** です。現行の `infra/main.bicep` / `infra/modules/` 実装との差分がある場合は、仕様を正として段階的に実装へ反映してください。

@@ -25,5 +25,5 @@
 
 ## 未確認事項（spec未記載・コード記載）
 - `modules` 配下に Entra/OIDC 認証設定を直接実装する Bicep 定義は現時点で未確認。
-- 認証強制の実体は `modules/apim.bicep` の APIM 作成までで、ポリシー/IdP連携設定は未確認。
+- 認証強制の実体は `infra/modules/apim.bicep` の APIM 作成までで、ポリシー/IdP連携設定は未確認。
 

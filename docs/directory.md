@@ -5,7 +5,6 @@
 ```text
 /workspace/dify-azure-bicep-insidecorp
 ├── README.md
-├── deploy.ps1
 ├── docs
 │   ├── agent-ci.md
 │   ├── aoai-entra-auth-spec.md
@@ -24,15 +23,18 @@
 │       ├── 70_secret.md
 │       ├── 80_bicep.md
 │       └── spec.md
-├── main.bicep
-├── modules
-│   ├── aca-env.bicep
-│   ├── apim.bicep
-│   ├── keyvaulte.bicep
-│   ├── network.bicep
-│   ├── postgresql.bicep
-│   ├── redis-cache.bicep
-│   └── storage.bicep
+├── infra
+│   ├── ./deploy.ps1
+│   ├── ./main.bicep
+│   ├── ./parameters.example.json
+│   └── modules
+│       ├── aca-env.bicep
+│       ├── apim.bicep
+│       ├── keyvaulte.bicep
+│       ├── network.bicep
+│       ├── postgresql.bicep
+│       ├── redis-cache.bicep
+│       └── storage.bicep
 ├── mountfiles
 │   ├── nginx
 │   │   ├── conf.d
@@ -40,18 +42,6 @@
 │   │   ├── fastcgi_params
 │   │   ├── mime.types
 │   │   ├── modules
-│   │   │   ├── ngx_http_geoip_module-debug.so
-│   │   │   ├── ngx_http_geoip_module.so
-│   │   │   ├── ngx_http_image_filter_module-debug.so
-│   │   │   ├── ngx_http_image_filter_module.so
-│   │   │   ├── ngx_http_js_module-debug.so
-│   │   │   ├── ngx_http_js_module.so
-│   │   │   ├── ngx_http_xslt_filter_module-debug.so
-│   │   │   ├── ngx_http_xslt_filter_module.so
-│   │   │   ├── ngx_stream_geoip_module-debug.so
-│   │   │   ├── ngx_stream_geoip_module.so
-│   │   │   ├── ngx_stream_js_module-debug.so
-│   │   │   └── ngx_stream_js_module.so
 │   │   ├── nginx.conf
 │   │   ├── proxy.conf
 │   │   ├── scgi_params
@@ -64,7 +54,6 @@
 │       │   └── rock.conf
 │       ├── errorpage.css
 │       └── squid.conf
-├── parameters.example.json
 └── terraform_old
     ├── README.md
     ├── aca-env.tf

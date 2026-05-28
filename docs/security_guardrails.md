@@ -29,7 +29,7 @@
 
 ### 2.4 運用検証境界
 
-- `deploy.ps1` はデプロイ・ファイル共有アップロード中心で、NSG ルールの適用状態を検査する手順は未実装。
+- `infra/deploy.ps1` はデプロイ・ファイル共有アップロード中心で、NSG ルールの適用状態を検査する手順は未実装。
 
 ---
 
@@ -56,12 +56,12 @@
 
 ## 4.2 Bicep 修正案
 
-1. `modules/nsg.bicep`（新規）を追加し、以下を定義。
+1. `infra/modules/nsg.bicep`（新規）を追加し、以下を定義。
    - Inbound Allow: `publicAllowedCidrs` -> `80/443`（必要ポートのみ）
    - Inbound Deny: `*` -> `*`
    - 必要に応じて管理向け許可（踏み台/VPNセグメント）
 
-2. `modules/vnet.bicep` または `main.bicep` 側で NSG をサブネットへ関連付け。
+2. `infra/modules/vnet.bicep` または `infra/main.bicep` 側で NSG をサブネットへ関連付け。
    - 優先対象: `ACASubnet`
    - 必要に応じて `PrivateLinkSubnet` / `PostgresSubnet` も個別 NSG で明示制御
 
@@ -70,7 +70,7 @@
    - `nsgName`（またはサブネットごとの NSG 名）
    - `enableNsgEnforcement`（段階適用フラグ）
 
-## 4.3 運用スクリプト修正案（deploy.ps1）
+## 4.3 運用スクリプト修正案（infra/deploy.ps1）
 
 - デプロイ後に以下を検証。
   1. NSG が対象サブネットに関連付け済みであること。
