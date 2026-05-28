@@ -31,3 +31,9 @@
 - IaC/CI ログにシークレット平文が出力されない。
 - 参照権限が最小権限で付与されている。
 - ローテーション手順と復旧手順が文書化されている。
+
+## 未確認事項（spec未記載・コード記載）
+- `modules/keyvaulte.bicep` は Key Vault を `publicNetworkAccess: 'Enabled'` で作成。
+- `modules/keyvaulte.bicep` は `enableRbacAuthorization` をパラメータ化（既定 `true`）。
+- `modules` 配下で Key Vault シークレット作成・参照（Container Apps 側の Key Vault reference）までを行う定義は未確認。
+

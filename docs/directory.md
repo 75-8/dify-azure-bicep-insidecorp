@@ -13,16 +13,26 @@
 │   ├── dify-azure-infra.drawio
 │   ├── directory.md
 │   ├── security_guardrails.md
-│   └── task_list.md
+│   ├── task_list.md
+│   └── spec
+│       ├── 10_network.md
+│       ├── 20_auth.md
+│       ├── 30_api.md
+│       ├── 40_aoai.md
+│       ├── 50_aca.md
+│       ├── 60_db.md
+│       ├── 70_secret.md
+│       ├── 80_bicep.md
+│       └── spec.md
 ├── main.bicep
 ├── modules
 │   ├── aca-env.bicep
-│   ├── fileshare.bicep
+│   ├── apim.bicep
+│   ├── keyvaulte.bicep
 │   ├── network.bicep
 │   ├── postgresql.bicep
 │   ├── redis-cache.bicep
-│   ├── storage.bicep
-│   └── vnet.bicep
+│   └── storage.bicep
 ├── mountfiles
 │   ├── nginx
 │   │   ├── conf.d

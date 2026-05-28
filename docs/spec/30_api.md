@@ -34,3 +34,9 @@
 - APIM 側は **Managed Identity** を使用する想定とする。
 - APIM からバックエンド（ACA api）呼び出し時は、必要に応じて MI ベース認証を適用する。
 - APIM のポリシーでトークン取得/付与方式を標準化し、手動シークレット配布を禁止する。
+
+## 未確認事項（spec未記載・コード記載）
+- `modules/apim.bicep` は `SystemAssigned` Managed Identity を有効化している。
+- `modules/apim.bicep` は `publicNetworkAccess: 'Enabled'` で作成される。
+- `modules/apim.bicep` は API 定義（OpenAPI import）や OAuth2 検証ポリシーを含まない。
+
