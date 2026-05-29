@@ -27,33 +27,33 @@
 │   ├── ./deploy.ps1
 │   ├── ./main.bicep
 │   ├── ./parameters.example.json
-│   └── modules
-│       ├── aca-env.bicep
-│       ├── apim.bicep
-│       ├── keyvaulte.bicep
-│       ├── network.bicep
-│       ├── postgresql.bicep
-│       ├── redis-cache.bicep
-│       └── storage.bicep
-├── mountfiles
-│   ├── nginx
-│   │   ├── conf.d
-│   │   │   └── default.conf
-│   │   ├── fastcgi_params
-│   │   ├── mime.types
-│   │   ├── modules
-│   │   ├── nginx.conf
-│   │   ├── proxy.conf
-│   │   ├── scgi_params
-│   │   └── uwsgi_params
-│   ├── sandbox
-│   │   └── python-requirements.txt
-│   └── ssrfproxy
-│       ├── conf.d
-│       │   ├── debian.conf
-│       │   └── rock.conf
-│       ├── errorpage.css
-│       └── squid.conf
+│   ├── modules
+│   │   ├── aca-env.bicep
+│   │   ├── apim.bicep
+│   │   ├── keyvaulte.bicep
+│   │   ├── network.bicep
+│   │   ├── postgresql.bicep
+│   │   ├── redis-cache.bicep
+│   │   └── storage.bicep
+│   └── mountfiles
+│       ├── nginx
+│       │   ├── conf.d
+│       │   │   └── default.conf
+│       │   ├── fastcgi_params
+│       │   ├── mime.types
+│       │   ├── modules
+│       │   ├── nginx.conf
+│       │   ├── proxy.conf
+│       │   ├── scgi_params
+│       │   └── uwsgi_params
+│       ├── sandbox
+│       │   └── python-requirements.txt
+│       └── ssrfproxy
+│           ├── conf.d
+│           │   ├── debian.conf
+│           │   └── rock.conf
+│           ├── errorpage.css
+│           └── squid.conf
 └── terraform_old
     ├── README.md
     ├── aca-env.tf

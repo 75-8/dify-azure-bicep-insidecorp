@@ -208,8 +208,8 @@ foreach ($share in $shares) {
         }
     }
     
-    # Upload files directly from mountfiles directory
-    $sourcePath = Join-Path $repoRoot (Join-Path "mountfiles" $share)
+    # Upload files directly from infra/mountfiles directory
+    $sourcePath = Join-Path $repoRoot (Join-Path "infra/mountfiles" $share)
     if (Test-Path $sourcePath) {
         Write-Host "Uploading configuration files..." -ForegroundColor Cyan
         
