@@ -1,0 +1,19 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - script: |
+      echo "CI pipeline connectivity check"
+      echo "Repository: $(Build.Repository.Name)"
+      echo "Branch: $(Build.SourceBranch)"
+    displayName: CI connectivity check
