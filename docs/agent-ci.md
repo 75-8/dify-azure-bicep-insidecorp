@@ -19,7 +19,7 @@
    - `prod` は Approver 必須。
 
 2. **再現性**
-   - ローカル `deploy.ps1` 依存を減らし、CI 用の明示的ジョブに処理を分解する。
+   - ローカル `infra/deploy.ps1` 依存を減らし、CI 用の明示的ジョブに処理を分解する。
    - Bicep コンパイル・What-If・Deploy をパイプラインで固定手順化。
 
 3. **安全性**
@@ -71,10 +71,10 @@ PR の品質ゲート。
 ### 主要ジョブ
 1. `validate-bicep`
    - `az bicep install`（または事前インストール確認）
-   - `az bicep build --file main.bicep`
+   - `az bicep build --file infra/main.bicep`
 2. `what-if`
    - Azure OIDC ログイン
-   - `az deployment sub what-if --location <loc> --template-file main.bicep --parameters <env-params>`
+   - `az deployment sub what-if --location <loc> --template-file infra/main.bicep --parameters <env-params>`
    - 結果を markdown 化して PR コメント
 3. `policy-check`（任意）
    - 禁止設定（例: public ingress, 広すぎる CIDR）をスクリプトで検出
@@ -100,7 +100,7 @@ main への反映を Azure へ自動デプロイ。
    - AOAI + UAMI 採用後は RBAC 反映確認を実施
 
 ### 補足
-- `deploy.ps1` の機能（アップロードや事後確認）のうち CI 必須部分は script 化して再利用可能にする。
+- `infra/deploy.ps1` の機能（アップロードや事後確認）のうち CI 必須部分は script 化して再利用可能にする。
 
 ## 4.3 `.github/workflows/iac-manual.yml`（任意）
 
@@ -124,7 +124,7 @@ main への反映を Azure へ自動デプロイ。
 `tools/ci/` ディレクトリを追加し、Action から呼び出す。
 
 - `tools/ci/run-whatif.ps1`
-- `tools/ci/run-deploy.ps1`
+- `tools/ci/deploy-infra.ps1`
 - `tools/ci/post-verify.ps1`
 
 これにより Workflow YAML の肥大化を防ぎ、ローカル検証とも共通化できる。

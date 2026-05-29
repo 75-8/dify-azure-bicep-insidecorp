@@ -17,21 +17,21 @@ resource "azurerm_storage_container" "dfy"{
 module "nginx_fileshare" {
   source              = "./fileshare_module"
   storage_account_name = azurerm_storage_account.acafileshare.name
-  local_mount_dir      = "mountfiles/nginx"
+  local_mount_dir      = "${path.module}/../infra/mountfiles/nginx"
   share_name           = "nginx"
 }
 
 module "sandbox_fileshare" {
   source              = "./fileshare_module"
   storage_account_name = azurerm_storage_account.acafileshare.name
-  local_mount_dir      = "mountfiles/sandbox"
+  local_mount_dir      = "${path.module}/../infra/mountfiles/sandbox"
   share_name           = "sandbox"
 }
 
 module "ssrf_proxy_fileshare" {
   source              = "./fileshare_module"
   storage_account_name = azurerm_storage_account.acafileshare.name
-  local_mount_dir      = "mountfiles/ssrfproxy"
+  local_mount_dir      = "${path.module}/../infra/mountfiles/ssrfproxy"
   share_name           = "ssrfproxy"
 }
 

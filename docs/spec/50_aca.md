@@ -18,7 +18,7 @@
 - 環境変数へ平文を直書きしない。
 
 ## 未確認事項（spec未記載・コード記載）
-- `modules/aca-env.bicep` の `nginx` Container App は `ingress.external: true` で公開設定。
-- `modules/aca-env.bicep` は `allowedIngressCidrs` によるIP許可 + `deny-all` で制御。
-- `modules/aca-env.bicep` では Storage/Redis/PostgreSQL の接続秘密情報を `@secure` パラメータで受け取るが、Key Vault 参照定義は未確認。
+- `infra/modules/aca-env.bicep` の `nginx` Container App は `ingress.external: true` で公開設定。
+- `infra/modules/aca-env.bicep` は `allowedIngressCidrs` によるIP許可 + `deny-all` で制御。
+- `infra/modules/aca-env.bicep` では Storage/Redis/PostgreSQL の接続秘密情報を `@secure` パラメータで受け取るが、Key Vault 参照定義は未確認。
 

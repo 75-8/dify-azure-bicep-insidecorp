@@ -3,12 +3,21 @@
     [switch]$SkipDeploy
 )
 
+# Resolve paths relative to this script so it works from any current directory
+$scriptRoot = $PSScriptRoot
+if ([string]::IsNullOrWhiteSpace($scriptRoot)) {
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+$repoRoot = Split-Path -Parent $scriptRoot
+$parametersPath = Join-Path $scriptRoot "parameters.json"
+$templateFilePath = Join-Path $scriptRoot ("main" + ".bicep")
+
 # Set default resource group at the beginning of the script (after parameter declaration)
 $env:AZURE_DEFAULTS_GROUP = $ResourceGroupName
 
 # If resource group name is not specified, retrieve it from parameters file
-if (Test-Path "./parameters.json") {
-    $params = Get-Content "./parameters.json" | ConvertFrom-Json
+if (Test-Path $parametersPath) {
+    $params = Get-Content $parametersPath | ConvertFrom-Json
     if ($ResourceGroupName -eq "") {
         $location = $params.parameters.location.value
         $rgPrefix = $params.parameters.resourceGroupPrefix.value
@@ -35,7 +44,7 @@ if (-not $loginStatus) {
 # Deploy Bicep template if not skipping
 if (-not $SkipDeploy) {
     Write-Host "Deploying Bicep template..." -ForegroundColor Cyan
-    az deployment sub create --location $location --template-file main.bicep --parameters parameters.json
+    az deployment sub create --location $location --template-file $templateFilePath --parameters $parametersPath
     
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Bicep deployment failed."
@@ -199,8 +208,8 @@ foreach ($share in $shares) {
         }
     }
     
-    # Upload files directly from mountfiles directory
-    $sourcePath = "./mountfiles/$share"
+    # Upload files directly from infra/mountfiles directory
+    $sourcePath = Join-Path $repoRoot (Join-Path "infra/mountfiles" $share)
     if (Test-Path $sourcePath) {
         Write-Host "Uploading configuration files..." -ForegroundColor Cyan
         

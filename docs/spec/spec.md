@@ -29,13 +29,13 @@
 
 | modules | ドメイン仕様書 | 備考 |
 |---|---|---|
-| `modules/network.bicep` | `docs/spec/10_network.md` | VNet/Subnet の定義 |
-| `modules/apim.bicep` | `docs/spec/30_api.md` | APIM（/v1 経路） |
-| `modules/keyvaulte.bicep` | `docs/spec/70_secret.md` | Key Vault 管理 |
-| `modules/aca-env.bicep` | `docs/spec/50_aca.md` | ACA Environment / Apps |
-| `modules/postgresql.bicep` | `docs/spec/60_db.md` | PostgreSQL |
-| `modules/redis-cache.bicep` | `docs/spec/60_db.md` | Redis |
-| `modules/storage.bicep` | `docs/spec/60_db.md` | Storage |
+| `infra/modules/network.bicep` | `docs/spec/10_network.md` | VNet/Subnet の定義 |
+| `infra/modules/apim.bicep` | `docs/spec/30_api.md` | APIM（/v1 経路） |
+| `infra/modules/keyvaulte.bicep` | `docs/spec/70_secret.md` | Key Vault 管理 |
+| `infra/modules/aca-env.bicep` | `docs/spec/50_aca.md` | ACA Environment / Apps |
+| `infra/modules/postgresql.bicep` | `docs/spec/60_db.md` | PostgreSQL |
+| `infra/modules/redis-cache.bicep` | `docs/spec/60_db.md` | Redis |
+| `infra/modules/storage.bicep` | `docs/spec/60_db.md` | Storage |
 
 > 目次（構成一覧）は `docs/directory.md` を正とし、本表は `docs/spec` からの参照用とする。
 

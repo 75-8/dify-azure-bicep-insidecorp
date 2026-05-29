@@ -58,21 +58,21 @@
 ### P0: ネットワーク境界の確立（最優先）
 
 - [ ] **N1. VNet サブネット再設計（App Gateway 追加）**
-  - 対象: `modules/vnet.bicep`, `main.bicep`
+  - 対象: `infra/modules/vnet.bicep`, `infra/main.bicep`
   - 実装内容:
     - `AppGatewaySubnet`（専用）追加
     - 既存サブネット CIDR の競合確認
     - パラメータに CIDR を外だし（環境別変更可能にする）
 
 - [ ] **N2. NSG モジュール追加とサブネット関連付け**
-  - 追加先: `modules/network-nsg.bicep`（新規）
+  - 追加先: `infra/modules/network-nsg.bicep`（新規）
   - 実装内容:
     - `nsg-appgw` / `nsg-aca` / `nsg-postgres` / `nsg-privatelink` を作成
     - 各サブネットへ NSG を関連付け
     - 既定 deny と必要通信のみ許可
 
 - [ ] **N3. Application Gateway（WAFなし）モジュール追加 + Entra侵入制限**
-  - 追加先: `modules/app-gateway.bicep`（新規）
+  - 追加先: `infra/modules/app-gateway.bicep`（新規）
   - 実装内容:
     - Public IP / App Gateway（Standard_v2想定）
     - HTTPS Listener + 証明書参照（Key Vault 連携は将来拡張可）
@@ -81,7 +81,7 @@
     - Health Probe と HTTP Settings を定義
 
 - [ ] **N4. ACA の完全内部化**
-  - 対象: `modules/aca-env.bicep`
+  - 対象: `infra/modules/aca-env.bicep`
   - 実装内容:
     - `nginx` の external ingress 廃止（または app 自体削除）
     - App Gateway 経由のみを前提に ingress 設定を見直し
@@ -89,7 +89,7 @@
 ### P1: Private PaaS 完成度向上
 
 - [ ] **N5. Private Endpoint / DNS の整合性強化**
-  - 対象: `modules/storage.bicep`, `modules/postgresql.bicep`, `modules/redis-cache.bicep`, （必要に応じて AOAI モジュール）
+  - 対象: `infra/modules/storage.bicep`, `infra/modules/postgresql.bicep`, `infra/modules/redis-cache.bicep`, （必要に応じて AOAI モジュール）
   - 実装内容:
     - Private DNS Zone Link の依存関係を明確化
     - ACA からの名前解決確認用 output 追加

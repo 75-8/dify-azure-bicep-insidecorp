@@ -13,7 +13,7 @@
 - エラー形式は `code` / `message` / `traceId` を共通化。
 
 ## 実装保留
-- `modules/apim.bicep` の作成
+- `infra/modules/apim.bicep` の作成
 - OAuth連携設定
 - OpenAPI import
 
@@ -36,7 +36,7 @@
 - APIM のポリシーでトークン取得/付与方式を標準化し、手動シークレット配布を禁止する。
 
 ## 未確認事項（spec未記載・コード記載）
-- `modules/apim.bicep` は `SystemAssigned` Managed Identity を有効化している。
-- `modules/apim.bicep` は `publicNetworkAccess: 'Enabled'` で作成される。
-- `modules/apim.bicep` は API 定義（OpenAPI import）や OAuth2 検証ポリシーを含まない。
+- `infra/modules/apim.bicep` は `SystemAssigned` Managed Identity を有効化している。
+- `infra/modules/apim.bicep` は `publicNetworkAccess: 'Enabled'` で作成される。
+- `infra/modules/apim.bicep` は API 定義（OpenAPI import）や OAuth2 検証ポリシーを含まない。
 
