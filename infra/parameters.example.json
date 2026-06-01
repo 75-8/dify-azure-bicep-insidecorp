@@ -24,6 +24,9 @@
     "difySandboxImage": { "value": "langgenius/dify-sandbox:0.2.14" },
     "difyWebImage": { "value": "langgenius/dify-web:1.13.3" },
     "difyPluginDaemonImage": { "value": "langgenius/dify-plugin-daemon:0.5.3-local" },
-    "fileShareNames": { "value": ["nginx", "sandbox", "ssrfproxy", "pluginstorage"] }
+    "fileShareNames": { "value": ["nginx", "sandbox", "ssrfproxy", "pluginstorage"] },
+    "subscriptionId": { "value": "REPLACE_WITH_SUBSCRIPTION_ID" },
+    "deployApim": { "value": false },
+    "keyVaultName": { "value": "dify-kv" }
   }
 }
