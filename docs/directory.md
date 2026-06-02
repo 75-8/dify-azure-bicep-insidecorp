@@ -26,7 +26,9 @@
 ├── infra
 │   ├── ./deploy.ps1
 │   ├── ./main.bicep
-│   ├── ./parameters.example.json
+│   ├── parameters
+│   │   ├── parameters_dev.example.json
+│   │   └── parameters_prd.example.json
 │   ├── modules
 │   │   ├── aca-env.bicep
 │   │   ├── apim.bicep

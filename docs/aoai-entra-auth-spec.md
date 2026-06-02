@@ -21,7 +21,7 @@
 - `infra/main.bicep` へのパラメータ追加と新規モジュール呼び出し追加。
 - `infra/modules/aca-env.bicep` への入力追加（Dify コンテナの AOAI 関連設定。ただし API Key は IaC で注入しない）。
 - `infra/deploy.ps1` への AOAI 関連の補助処理追加。
-- `infra/parameters.example.json` と `README.md` の追補（任意だが推奨）。
+- `infra/parameters/parameters_*.example.json` と `README.md` の追補（任意だが推奨）。
 
 ### 非対象
 - Dify アプリ本体コードの改修。
@@ -113,7 +113,7 @@
 - `infra/deploy.ps1` は現在ファイルアップロード処理を含むため、AOAI 関連チェックを追加する位置を明確化（Bicep 成功直後を推奨）。
 - エラー時は既存と同様に `Write-Error` + `exit 1`。
 
-## 5. パラメータ設計（`infra/parameters.example.json` 追補案）
+## 5. パラメータ設計（`infra/parameters/parameters_*.example.json` 追補案）
 
 - `aoaiAccountBase`: `aoaidify`
 - `aoaiSkuName`: `S0`
@@ -133,7 +133,7 @@
 3. `infra/modules/aca-env.bicep` に AOAI 接続先情報（endpoint/version/deployment）のみ追加。
 4. `infra/modules/vnet.bicep`（または NSG 専用モジュール）に NSG とルールを追加し、対象サブネットへ関連付け。
 5. `infra/deploy.ps1` に NSG ルール確認 + 機微情報非出力チェックを追加。
-6. `infra/parameters.example.json` と README を更新。
+6. `infra/parameters/parameters_*.example.json` と README を更新。
 7. What-If/本番デプロイで検証。
 
 ## 7. テスト計画
