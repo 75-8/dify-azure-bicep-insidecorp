@@ -27,6 +27,7 @@
     "fileShareNames": { "value": ["nginx", "sandbox", "ssrfproxy", "pluginstorage"] },
     "subscriptionId": { "value": "REPLACE_WITH_SUBSCRIPTION_ID" },
     "deployApim": { "value": false },
-    "keyVaultName": { "value": "dify-kv" }
+    "keyVaultName": { "value": "dify-kv" },
+    "keyVaultAccessPolicies": { "value": [] }
   }
 }

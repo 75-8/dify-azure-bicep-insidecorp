@@ -29,7 +29,7 @@
 - APIM の外部IdP連携（OAuth2.0）と内部バックエンド連携（MI）を分離設計する。
 
 ## 未確認事項（spec未記載・コード記載）
-- 実在モジュールは `network/apim/keyvaulte/aca-env/postgresql/redis-cache/storage`。
+- 実在モジュールは `network/apim/keyvault/aca-env/postgresql/redis-cache/storage`。
 - `80_bicep.md` 記載の `vnet`/`network-nsg`/`app-gateway`/`aoai` は `modules` 直下に同名モジュール未確認。
 - `docs/directory.md` には `fileshare.bicep`/`vnet.bicep` の記載があるが、現行 `modules` には未確認。
 
