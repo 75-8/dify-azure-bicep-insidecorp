@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Planning — blocked pending user requirements, Azure subscription, and region confirmation
+> **Status:** Planning — approved; pending Azure CLI-enabled environment and subscription validation
 
 Generated: 2026-06-02T00:00:00Z
 
@@ -20,13 +20,13 @@ Generated: 2026-06-02T00:00:00Z
 
 | Attribute | Value |
 |-----------|-------|
-| Classification | Blocked until user confirms: POC, Development, or Production |
-| Scale | Blocked until user confirms expected users/workload size |
-| Budget | Blocked until user confirms Cost-Optimized, Balanced, or Performance |
-| **Subscription** | Blocked: Azure CLI is not installed in this environment, and the user has not provided a subscription ID/name |
-| **Location** | Default detected from Bicep/examples: `japaneast`; must be confirmed by user before execution |
-| Compliance / policy constraints | Blocked until subscription is known and policy assignments can be queried |
-| Network access posture | Existing documentation and parameter examples indicate corporate/private access intent via `allowedIngressCidrs` |
+| Classification | Development |
+| Scale | Low-cost implementation focus |
+| Budget | Cost-Optimized |
+| **Subscription** | Parameterized; user requested generic subscription configuration rather than hard-coded values |
+| **Location** | Default detected from Bicep/examples: `japaneast`; allow either `japaneast` or `japanwest` via parameter |
+| Compliance / policy constraints | Requires subscription context before policy or guardrail checks can run |
+| Network access posture | Corporate/private access intent implied; allowed CIDRs should be supplied via parameters |
 
 ---
 
@@ -150,7 +150,7 @@ Quota validation is not complete. Required next actions:
 - [x] Select recipe
 - [x] Plan architecture based on existing repository
 - [ ] Present complete quota-validated plan to user
-- [ ] **User approved this plan**
+- [x] **User approved this plan**
 
 ### Phase 2: Execution
 - [ ] Research components and service-specific references
@@ -202,11 +202,17 @@ Quota validation is not complete. Required next actions:
 ## 10. Questions Required Before Execution
 
 1. What target classification should this deployment use: POC, Development, or Production?
+ A: Development
 2. What Azure subscription ID/name should be used?
+ A: Parameterized placeholder; do not hard-code specific subscription values
 3. Should the deployment region remain `japaneast`, or should it use another Azure region?
+ A: Keep `japaneast` as the primary default; allow `west` through parameterization if needed
 4. What corporate ingress CIDR ranges should be allowed?
+ A: Parameterized placeholder; supply allowed CIDR ranges via deployment parameters
 5. Should optional APIM, Application Gateway, Key Vault, and bring-your-own-certificate paths be enabled?
+ A: Not required; keep these optional paths disabled by default
 6. What scale and budget profile should drive PostgreSQL, Redis, Container Apps, and monitoring sizing?
+ A: No specific scale target; optimize for low-cost implementation
 
 ---
 
@@ -214,7 +220,7 @@ Quota validation is not complete. Required next actions:
 
 > Current: Phase 1 Planning is partially complete and blocked before approval/execution.
 
-1. User provides requirements and Azure context listed above.
+1. User provided approval for generic parameterized preparation.
 2. Quota checks are run in an Azure CLI-enabled environment.
-3. The completed, quota-validated plan is presented for approval.
-4. Only after approval, infrastructure/configuration changes are executed.
+3. The completed, quota-validated plan is presented for final approval if needed.
+4. Only after validation, infrastructure/configuration changes are executed.
