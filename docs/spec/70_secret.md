@@ -33,7 +33,7 @@
 - ローテーション手順と復旧手順が文書化されている。
 
 ## 未確認事項（spec未記載・コード記載）
-- `infra/modules/keyvaulte.bicep` は Key Vault を `publicNetworkAccess: 'Enabled'` で作成。
-- `infra/modules/keyvaulte.bicep` は `enableRbacAuthorization` をパラメータ化（既定 `true`）。
+- `infra/modules/keyvault.bicep` は Key Vault を `publicNetworkAccess: 'Disabled'` で作成し、Private Link 経由で接続する。
+- `infra/modules/keyvault.bicep` は `enableRbacAuthorization: false` と `accessPolicies` を明示し、Access Policy を使用する。
 - `modules` 配下で Key Vault シークレット作成・参照（Container Apps 側の Key Vault reference）までを行う定義は未確認。
 

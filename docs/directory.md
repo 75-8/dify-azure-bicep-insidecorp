@@ -32,7 +32,7 @@
 │   ├── modules
 │   │   ├── aca-env.bicep
 │   │   ├── apim.bicep
-│   │   ├── keyvaulte.bicep
+│   │   ├── keyvault.bicep
 │   │   ├── network.bicep
 │   │   ├── postgresql.bicep
 │   │   ├── redis-cache.bicep

@@ -31,7 +31,7 @@
 |---|---|---|
 | `infra/modules/network.bicep` | `docs/spec/10_network.md` | VNet/Subnet の定義 |
 | `infra/modules/apim.bicep` | `docs/spec/30_api.md` | APIM（/v1 経路） |
-| `infra/modules/keyvaulte.bicep` | `docs/spec/70_secret.md` | Key Vault 管理 |
+| `infra/modules/keyvault.bicep` | `docs/spec/70_secret.md` | Key Vault 管理 |
 | `infra/modules/aca-env.bicep` | `docs/spec/50_aca.md` | ACA Environment / Apps |
 | `infra/modules/postgresql.bicep` | `docs/spec/60_db.md` | PostgreSQL |
 | `infra/modules/redis-cache.bicep` | `docs/spec/60_db.md` | Redis |

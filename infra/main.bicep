@@ -28,6 +28,12 @@ param pgsqlUser string = 'user'
 @secure()
 param pgsqlPassword string
 
+@description('Key Vault name')
+param keyVaultName string = 'dify-kv'
+
+@description('Explicit Key Vault access policies used for data-plane permissions')
+param keyVaultAccessPolicies array = []
+
 @description('ACA environment name')
 param acaEnvName string = 'dify-aca-env'
 
@@ -96,6 +102,20 @@ module networkModule './modules/network.bicep' = {
   params: {
     location: location
     ipPrefix: ipPrefix
+  }
+}
+
+
+// Deploy Key Vault with explicit access policies over Private Link
+module keyVaultModule './modules/keyvault.bicep' = {
+  name: 'keyVaultDeploy'
+  scope: rg
+  params: {
+    location: location
+    keyVaultName: keyVaultName
+    accessPolicies: keyVaultAccessPolicies
+    privateLinkSubnetId: networkModule.outputs.privateLinkSubnetId
+    vnetId: networkModule.outputs.vnetId
   }
 }
 
@@ -177,3 +197,4 @@ module acaModule './modules/aca-env.bicep' = {
 
 // Post-deployment output
 output difyAppUrl string = acaModule.outputs.difyAppUrl
+output keyVaultUri string = keyVaultModule.outputs.keyVaultUri
