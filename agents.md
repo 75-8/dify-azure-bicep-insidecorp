@@ -10,7 +10,8 @@
 |---------|------|
 | [`main.bicep`](./main.bicep) | メインのBicep構成ファイル。Azure リソースのプロビジョニング定義 |
 | [`deploy.ps1`](./deploy.ps1) | PowerShellデプロイメントスクリプト。`az login` 後に実行 |
-| [`parameters.example.json`](./parameters.example.json) | パラメータ設定のテンプレート。コピーして `parameters.json` を作成 |
+| [`infra/parameters/parameters_dev.example.json`](./infra/parameters/parameters_dev.example.json) | 開発環境向けパラメータ設定のテンプレート。コピーして `infra/parameters.json` を作成 |
+| [`infra/parameters/parameters_prd.example.json`](./infra/parameters/parameters_prd.example.json) | 本番環境向けパラメータ設定のテンプレート。コピーして `infra/parameters.json` を作成 |
 | [`README.md`](./README.md) | プロジェクト全体の説明とデプロイ手順 |
 
 ### 📁 フォルダ構成
@@ -72,7 +73,9 @@ module storageModule './modules/storage.bicep' = {
 
 2. **パラメータファイルを作成**
    ```bash
-   cp parameters.example.json parameters.json
+   cp infra/parameters/parameters_dev.example.json infra/parameters.json
+   # または本番環境:
+   cp infra/parameters/parameters_prd.example.json infra/parameters.json
    # 必要な値を編集（パスワード、ドメインなど）
    ```
 
@@ -101,7 +104,7 @@ module storageModule './modules/storage.bicep' = {
 
 ## セキュリティに関する重要な注意
 
-⚠️ **`parameters.json` には機密情報が含まれます**
+⚠️ **`infra/parameters.json` には機密情報が含まれます**
 
 - `.gitignore` で保護されています
 - **決してコミット・プッシュしないでください**

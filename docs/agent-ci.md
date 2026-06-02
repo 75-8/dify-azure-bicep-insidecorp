@@ -114,9 +114,8 @@ main への反映を Azure へ自動デプロイ。
 ## 5.1 パラメータファイル整理
 `parameters/` ディレクトリを新設し、環境ごとに分離。
 
-- `parameters/dev.json`
-- `parameters/stg.json`
-- `parameters/prod.json`
+- `infra/parameters/parameters_dev.example.json`
+- `infra/parameters/parameters_prd.example.json`
 
 > 現在の `parameters.json` はローカル実行向けとし、CI は環境別ファイルを参照する運用に移行する。
 

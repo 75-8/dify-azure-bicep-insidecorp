@@ -17,7 +17,7 @@ Back-end components:
 - vectordb -> Azure Database for PostgreSQL
 - redis -> Azure Cache for Redis
 
-Before you provision Dify, please check and set the variables in infra/parameters.json file.
+Before you provision Dify, choose an environment example from `infra/parameters/` and set the variables in the `infra/parameters.json` file.
 
 ### Bicep Variables Documentation
 
@@ -29,9 +29,11 @@ This document provides detailed descriptions of the variables used in the Bicep 
 
 Before deploying:
 
-1. **Copy the example file**:
+1. **Copy the environment example file**:
    ```bash
-   cp infra/parameters.example.json infra/parameters.json
+   cp infra/parameters/parameters_dev.example.json infra/parameters.json
+   # or for production:
+   cp infra/parameters/parameters_prd.example.json infra/parameters.json
    ```
 
 2. **Set secure passwords**: Edit `infra/parameters.json` and replace the placeholder values with your own secure passwords:
@@ -50,8 +52,8 @@ Before deploying:
 az login
 az account set --subscription <subscription-id>
 
-# Copy and configure parameters file
-cp infra/parameters.example.json infra/parameters.json
+# Copy and configure parameters file (choose dev or prd)
+cp infra/parameters/parameters_dev.example.json infra/parameters.json
 # Edit infra/parameters.json with your secure passwords
 
 ./infra/deploy.ps1

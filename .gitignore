@@ -1,3 +1,5 @@
 dify_admin_credentials.txt
 param.txt
 parameters.json
+infra/parameters/*.json
+!infra/parameters/*.example.json
