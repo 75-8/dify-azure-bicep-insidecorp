@@ -191,6 +191,13 @@ cp infra/parameters/parameters_dev.example.json infra/parameters.json
 - **Type**: `string`
 - **Default Value**: `langgenius/dify-plugin-daemon:0.5.3-local`
 
+##### Nginx Image with Dynamic Modules
+
+- **Parameter Name**: `nginxImage`
+- **Type**: `string`
+- **Default Value**: `REPLACE_WITH_REGISTRY.azurecr.io/dify-nginx:1.27.5-bookworm`
+- **Note**: Build this image from `infra/images/nginx/Dockerfile`. The Dockerfile extends the official `nginx` image and bakes in the checked-in dynamic modules from `infra/mountfiles/nginx/modules/*.so`. Manage the official nginx base tag and digest separately in `infra/images/nginx/nginx-image.env` before building and pushing the image.
+
 ### Infrastructure Diagram (draw.io)
 
 インフラ構成を draw.io で可視化したファイルを追加しました。
