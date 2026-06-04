@@ -116,6 +116,7 @@ resource difyCerts 'Microsoft.App/managedEnvironments/certificates@2023-05-01' =
 }
 
 output acaEnvId string = acaEnv.id
+output acaDefaultDomain string = acaEnv.properties.defaultDomain
 output difyCertificateId string = isProvidedCert ? resourceId('Microsoft.App/managedEnvironments/certificates', acaEnv.name, 'difycerts') : ''
 output nginxStorageName string = acaStorages[0].resourceName
 output ssrfProxyStorageName string = acaStorages[1].resourceName

@@ -28,6 +28,14 @@
     "subscriptionId": { "value": "REPLACE_WITH_SUBSCRIPTION_ID" },
     "deployApim": { "value": false },
     "keyVaultName": { "value": "dify-kv" },
-    "keyVaultAccessPolicies": { "value": [] }
+    "keyVaultAccessPolicies": { "value": [] },
+    "oauth2ProxyImage": { "value": "quay.io/oauth2-proxy/oauth2-proxy:v7.7.1" },
+    "oauth2ProxyClientId": { "value": "REPLACE_WITH_ENTRA_APP_CLIENT_ID" },
+    "oauth2ProxyClientSecret": { "value": "REPLACE_WITH_ENTRA_APP_CLIENT_SECRET" },
+    "oauth2ProxyTenantId": { "value": "REPLACE_WITH_ENTRA_TENANT_ID" },
+    "oauth2ProxyCookieSecret": { "value": "REPLACE_WITH_GENERATED_COOKIE_SECRET" },
+    "allow_ip": { "value": ["*"] },
+    "appGwCertBase64Value": { "value": "" },
+    "appGwCertPassword": { "value": "" }
   }
 }

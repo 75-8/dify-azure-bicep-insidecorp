@@ -77,13 +77,42 @@ param difyWebImage string = 'langgenius/dify-web:1.13.3'
 @description('Dify plugin daemon image')
 param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.5.3-local'
 
-
 @description('File share names used by Dify components')
 param fileShareNames array = [
   'nginx'
   'sandbox'
   'ssrfproxy'
   'pluginstorage'
+]
+
+@description('OAuth2 Proxy container image')
+param oauth2ProxyImage string = 'quay.io/oauth2-proxy/oauth2-proxy:v7.7.1'
+
+@description('OAuth2 Proxy client ID (Entra App Registration)')
+param oauth2ProxyClientId string = 'REPLACE_WITH_ENTRA_APP_CLIENT_ID'
+
+@description('OAuth2 Proxy client secret (Entra App Registration)')
+@secure()
+param oauth2ProxyClientSecret string
+
+@description('OAuth2 Proxy tenant ID')
+param oauth2ProxyTenantId string = 'REPLACE_WITH_ENTRA_TENANT_ID'
+
+@description('OAuth2 Proxy cookie secret')
+@secure()
+param oauth2ProxyCookieSecret string
+
+@description('Application Gateway SSL certificate Base64 data (PFX format)')
+@secure()
+param appGwCertBase64Value string = ''
+
+@description('Application Gateway SSL certificate password')
+@secure()
+param appGwCertPassword string = ''
+
+@description('Allowed source IP addresses/CIDRs for App Gateway HTTP/HTTPS inbound traffic')
+param allow_ip array = [
+  '*'
 ]
 
 // Create resource group
@@ -95,6 +124,17 @@ resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
 // Generate hash for unique resource names
 var rgNameHex = uniqueString(subscription().id, rg.name)
 
+// Deploy NSGs
+module nsgs './modules/nsg.bicep' = {
+  name: 'nsgsDeploy'
+  scope: rg
+  params: {
+    location: location
+    ipPrefix: ipPrefix
+    allow_ip: allow_ip
+  }
+}
+
 // Deploy network-related resources
 module networkModule './modules/network.bicep' = {
   name: 'vnetDeploy'
@@ -102,9 +142,12 @@ module networkModule './modules/network.bicep' = {
   params: {
     location: location
     ipPrefix: ipPrefix
+    appGwNsgId: nsgs.outputs.appGwNsgId
+    acaNsgId: nsgs.outputs.acaNsgId
+    privateLinkNsgId: nsgs.outputs.privateLinkNsgId
+    postgresNsgId: nsgs.outputs.postgresNsgId
   }
 }
-
 
 // Deploy Key Vault with explicit access policies over Private Link
 module keyVaultModule './modules/keyvault.bicep' = {
@@ -192,9 +235,29 @@ module acaModule './modules/aca-env.bicep' = {
     difyPluginDaemonImage: difyPluginDaemonImage
     blobEndpoint: storageModule.outputs.blobEndpoint
     allowedIngressCidrs: allowedIngressCidrs
+    oauth2ProxyImage: oauth2ProxyImage
+    oauth2ProxyClientId: oauth2ProxyClientId
+    oauth2ProxyClientSecret: oauth2ProxyClientSecret
+    oauth2ProxyTenantId: oauth2ProxyTenantId
+    oauth2ProxyCookieSecret: oauth2ProxyCookieSecret
+  }
+}
+
+// Deploy Application Gateway
+module appGwModule './modules/appgw.bicep' = {
+  name: 'appGwDeploy'
+  scope: rg
+  params: {
+    location: location
+    appGwSubnetId: networkModule.outputs.appGwSubnetId
+    acaNginxFqdn: 'nginx.${acaModule.outputs.acaDefaultDomain}'
+    isProvidedCert: isProvidedCert
+    appGwCertBase64Value: appGwCertBase64Value
+    appGwCertPassword: appGwCertPassword
   }
 }
 
 // Post-deployment output
 output difyAppUrl string = acaModule.outputs.difyAppUrl
 output keyVaultUri string = keyVaultModule.outputs.keyVaultUri
+output appGwPublicIp string = appGwModule.outputs.publicIpAddress

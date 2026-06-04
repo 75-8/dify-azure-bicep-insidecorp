@@ -4,6 +4,18 @@ param location string
 @description('IP prefix')
 param ipPrefix string
 
+@description('NSG ID for AppGwSubnet')
+param appGwNsgId string
+
+@description('NSG ID for ACASubnet')
+param acaNsgId string
+
+@description('NSG ID for PrivateLinkSubnet')
+param privateLinkNsgId string
+
+@description('NSG ID for PostgresSubnet')
+param postgresNsgId string
+
 // Create virtual network
 resource vnet 'Microsoft.Network/virtualNetworks@2023-05-01' = {
   name: 'vnet-${location}'
@@ -25,6 +37,9 @@ resource privateLinkSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01
   properties: {
     addressPrefix: '${ipPrefix}.0.0/24'
     privateEndpointNetworkPolicies: 'Disabled'
+    networkSecurityGroup: {
+      id: privateLinkNsgId
+    }
   }
 }
 
@@ -42,6 +57,9 @@ resource acaSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' = {
         }
       }
     ]
+    networkSecurityGroup: {
+      id: acaNsgId
+    }
   }
   dependsOn: [
     privateLinkSubnet
@@ -67,9 +85,27 @@ resource postgresSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' =
         }
       }
     ]
+    networkSecurityGroup: {
+      id: postgresNsgId
+    }
   }
   dependsOn: [
     acaSubnet
+  ]
+}
+
+// Application Gateway subnet (dedicated, no delegations per Azure requirement)
+resource appGwSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-05-01' = {
+  name: 'AppGwSubnet'
+  parent: vnet
+  properties: {
+    addressPrefix: '${ipPrefix}.5.0/24'
+    networkSecurityGroup: {
+      id: appGwNsgId
+    }
+  }
+  dependsOn: [
+    postgresSubnet
   ]
 }
 
@@ -78,3 +114,4 @@ output vnetName string = vnet.name
 output privateLinkSubnetId string = privateLinkSubnet.id
 output acaSubnetId string = acaSubnet.id
 output postgresSubnetId string = postgresSubnet.id
+output appGwSubnetId string = appGwSubnet.id

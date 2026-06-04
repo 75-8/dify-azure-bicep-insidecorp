@@ -92,6 +92,23 @@ param allowedIngressCidrs array = [
   '10.0.0.0/8'
 ]
 
+@description('OAuth2 Proxy container image')
+param oauth2ProxyImage string = 'quay.io/oauth2-proxy/oauth2-proxy:v7.7.1'
+
+@description('OAuth2 Proxy client ID (Entra App Registration)')
+param oauth2ProxyClientId string
+
+@description('OAuth2 Proxy client secret (Entra App Registration)')
+@secure()
+param oauth2ProxyClientSecret string
+
+@description('OAuth2 Proxy tenant ID')
+param oauth2ProxyTenantId string
+
+@description('OAuth2 Proxy cookie secret')
+@secure()
+param oauth2ProxyCookieSecret string
+
 // Platform owns the shared ACA foundation: logging, managed environment, certificates, and mounted storage handles.
 module platform './aca-env/platform.bicep' = {
   name: 'aca-platform'
@@ -125,6 +142,11 @@ module edgeRuntime './aca-env/edge-runtime.bicep' = {
     difyCertificateId: platform.outputs.difyCertificateId
     acaAppMinCount: acaAppMinCount
     allowedIngressCidrs: allowedIngressCidrs
+    oauth2ProxyImage: oauth2ProxyImage
+    oauth2ProxyClientId: oauth2ProxyClientId
+    oauth2ProxyClientSecret: oauth2ProxyClientSecret
+    oauth2ProxyTenantId: oauth2ProxyTenantId
+    oauth2ProxyCookieSecret: oauth2ProxyCookieSecret
   }
 }
 
@@ -160,3 +182,4 @@ module application './aca-env/application.bicep' = {
 
 // Deployment output
 output difyAppUrl string = edgeRuntime.outputs.difyAppUrl
+output acaDefaultDomain string = platform.outputs.acaDefaultDomain
