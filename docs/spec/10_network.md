@@ -3,13 +3,14 @@
 ## スコープ
 - VNet / Subnet 設計
 - NSG (Network Security Group) 設計
-- Application Gateway（WAFなし）
 - Private Endpoint / Private DNS
 
+※ Application Gateway のトラフィック制御・ルーティング設計は [15_appgw.md](./15_appgw.md) にて分離管理。
+
 ## 方針
-- 公開入口は Application Gateway ([appgw.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/appgw.bicep)) のみに限定する。
-- ACA 環境 ([aca-env.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/aca-env.bicep)) は internal 運用とし、インターネットへ直接露出させない。
-- 各サブネット境界は NSG ([nsg.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/nsg.bicep)) を用いて最小権限で制御する。
+- 公開入口は Application Gateway ([appgw.bicep](../../infra/modules/appgw.bicep)) のみに限定する。詳細ルーティング設計は [15_appgw.md](./15_appgw.md) を参照。
+- ACA 環境 ([aca-env.bicep](../../infra/modules/aca-env.bicep)) は internal 運用とし、インターネットへ直接露出させない。
+- 各サブネット境界は NSG ([nsg.bicep](../../infra/modules/nsg.bicep)) を用いて最小権限で制御する。
 
 ## サブネット設計仕様
 VNet 名は `vnet-${location}` とし、以下のサブネットおよび NSG を構成する（詳細は [network.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/network.bicep) 参照）：

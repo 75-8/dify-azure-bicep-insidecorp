@@ -11,9 +11,9 @@
 - 認証後は、カスタム HTTP ヘッダ（`X-Auth-Request-Email` 等）を介してログインユーザー情報を後続のアプリケーション層に伝える。
 
 ## 実装構成 (Bicep実装仕様)
-OAuth2 Proxy は ACA 環境上の `nginx` Container App 内にサイドカーコンテナとして稼働し、以下のフローで動作する（詳細は [edge-runtime.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/aca-env/edge-runtime.bicep) 参照）：
+OAuth2 Proxy は ACA 環境上の `nginx` Container App 内にサイドカーコンテナとして稼働し、以下のフローで動作する（詳細は [edge-runtime.bicep](../../infra/modules/aca-env/edge-runtime.bicep) 参照）：
 
-1. **ルーティング**: Application Gateway ([appgw.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/appgw.bicep)) は、バックエンドポート `4180` (OAuth2 Proxy のリッスンポート) にトラフィックを送る。
+1. **ルーティング**: Application Gateway ([appgw.bicep](../../infra/modules/appgw.bicep)) のトラフィック制御設計は [15_appgw.md](./15_appgw.md) にて定義。AppGw はバックエンドポート `4180` (OAuth2 Proxy のリッスンポート) にトラフィックを送る。
 2. **認証検証**: OAuth2 Proxy コンテナは、Entra OIDC プロバイダー (`https://login.microsoftonline.com/${tenantId}/v2.0`) と通信し認証検証を行う。
 3. **ローカルプロキシ**: 認証済みトラフィックのみを、同一 Container App 内のローカル `nginx` コンテナ（ポート `80`）へ中継（Upstream）する。
 4. **コンポーネント転送**: `nginx` はリクエストのパスに応じて、同じ ACA 環境内の internal サービス (`web:3000` または `api:5001`) にトラフィックを転送する。

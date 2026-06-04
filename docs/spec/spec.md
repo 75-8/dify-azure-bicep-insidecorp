@@ -11,13 +11,14 @@
 
 ## 参照順序
 1. [10_network.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/10_network.md)
-2. [20_auth.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/20_auth.md)
-3. [30_api.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/30_api.md)
-4. [40_aoai.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/40_aoai.md)
-5. [50_aca.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/50_aca.md)
-6. [60_db.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/60_db.md)
-7. [70_secret.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/70_secret.md)
-8. [80_bicep.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/80_bicep.md)
+2. [15_appgw.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/15_appgw.md)
+3. [20_auth.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/20_auth.md)
+4. [30_api.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/30_api.md)
+5. [40_aoai.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/40_aoai.md)
+6. [50_aca.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/50_aca.md)
+7. [60_db.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/60_db.md)
+8. [70_secret.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/70_secret.md)
+9. [80_bicep.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/80_bicep.md)
 
 ## 経路アーキテクチャ（要点）
 - **Dify UI 経路**: Client -> Application Gateway -> OAuth2 Proxy (Nginx Container App 内のサイドカー) -> Nginx -> Web UI (`web`)
@@ -30,7 +31,7 @@
 |---|---|---|
 | [nsg.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/nsg.bicep) | [10_network.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/10_network.md) | Network Security Group (NSG) の定義 |
 | [network.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/network.bicep) | [10_network.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/10_network.md) | VNet/Subnet の定義 |
-| [appgw.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/appgw.bicep) | [10_network.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/10_network.md) / [20_auth.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/20_auth.md) | Application Gateway の定義 |
+| [appgw.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/appgw.bicep) | [15_appgw.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/15_appgw.md) | Application Gateway の定義 |
 | [apim.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/apim.bicep) | [30_api.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/30_api.md) | APIM (将来的な /v1 API 経路の保護) |
 | [keyvault.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/keyvault.bicep) | [70_secret.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/70_secret.md) | Key Vault 管理 |
 | [aca-env.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/aca-env.bicep) | [50_aca.md](file:///home/sept/dify-azure-bicep-insidecorp/docs/spec/50_aca.md) | ACA Environment / Apps オーケストレーション |
