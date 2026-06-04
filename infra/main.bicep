@@ -77,6 +77,9 @@ param difyWebImage string = 'langgenius/dify-web:1.13.3'
 @description('Dify plugin daemon image')
 param difyPluginDaemonImage string = 'langgenius/dify-plugin-daemon:0.5.3-local'
 
+@description('Nginx image built from infra/images/nginx/Dockerfile with the checked-in dynamic modules baked in')
+param nginxImage string = 'REPLACE_WITH_REGISTRY.azurecr.io/dify-nginx:1.27.5-bookworm'
+
 
 @description('File share names used by Dify components')
 param fileShareNames array = [
@@ -190,6 +193,7 @@ module acaModule './modules/aca-env.bicep' = {
     difySandboxImage: difySandboxImage
     difyWebImage: difyWebImage
     difyPluginDaemonImage: difyPluginDaemonImage
+    nginxImage: nginxImage
     blobEndpoint: storageModule.outputs.blobEndpoint
     allowedIngressCidrs: allowedIngressCidrs
   }

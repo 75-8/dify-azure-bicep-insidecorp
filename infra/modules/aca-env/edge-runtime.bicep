@@ -27,6 +27,9 @@ param allowedIngressCidrs array = [
   '10.0.0.0/8'
 ]
 
+@description('Nginx image with the checked-in dynamic modules baked in')
+param nginxImage string
+
 var nginxAllowIpSecurityRestrictions = [for (cidr, i) in allowedIngressCidrs: {
   name: 'corp-allow-${i}'
   description: 'Allow corporate network CIDR ${cidr}'
@@ -71,7 +74,7 @@ resource nginxApp 'Microsoft.App/containerApps@2023-05-01' = {
       containers: [
         {
           name: 'nginx'
-          image: 'nginx:latest'
+          image: nginxImage
           resources: {
             cpu: json('0.5')
             memory: '1Gi'
@@ -85,7 +88,7 @@ resource nginxApp 'Microsoft.App/containerApps@2023-05-01' = {
           command: [
             '/bin/bash'
             '-c'
-            'rm -rf /etc/nginx/modules && cp -rf /custom-nginx/* /etc/nginx/ && nginx -g "daemon off;"'
+            'cp -rf /custom-nginx/conf.d /custom-nginx/*.conf /custom-nginx/*_params /custom-nginx/mime.types /etc/nginx/ && nginx -g "daemon off;"'
           ]
         }
       ]

@@ -84,6 +84,9 @@ param difyWebImage string
 @description('Dify Plugin Daemon image')
 param difyPluginDaemonImage string
 
+@description('Nginx image with the checked-in dynamic modules baked in')
+param nginxImage string
+
 @description('Blob endpoint')
 param blobEndpoint string
 
@@ -125,6 +128,7 @@ module edgeRuntime './aca-env/edge-runtime.bicep' = {
     difyCertificateId: platform.outputs.difyCertificateId
     acaAppMinCount: acaAppMinCount
     allowedIngressCidrs: allowedIngressCidrs
+    nginxImage: nginxImage
   }
 }
 
