@@ -149,6 +149,108 @@
 
 ---
 
+## 7. 実装完了状況（2026/6/5 時点）
+
+### ✅ 完了済み
+
+- [x] **N1. VNet サブネット再設計** - network.bicep でサブネット設計完了（PrivateLink, ACA, Postgres, AppGw）
+- [x] **N2. NSG モジュール追加とサブネット関連付け** - nsg.bicep で全 NSG 定義完了
+- [x] **N3. Application Gateway モジュール追加** - appgw.bicep で完全実装（URL パス分離、HTTP/HTTPS管理、probe 設定）
+- [x] **N4. ACA の完全内部化** - edge-runtime.bicep で nginx `external: false` 確認、ipSecurityRestrictions で CIDR 制限
+- [x] **N5. Private Endpoint/DNS 整合性** - 全 PaaS リソースで Private Endpoint 設定完了
+
+### ⏳ 実装継続中
+
+- [ ] **N6. NSG ルール通信マトリクス明確化** - 現在の NSG ルール設定は機能的だが、文書化が不足
+- [ ] **N7. CI/CD ネットワーク検証** - GitHub Actions 未実装
+- [ ] **N8. 運用 Runbook 更新** - README に簡易手順あり、詳細化が必要
+
+---
+
+## 8. 新規確認事項・不明点（2026/6/5 追加）
+
+### S1. セキュリティ: 環境変数への機微情報直接記載
+- **状況**: ACA Container Apps の環境変数に SECRET_KEY、API KEY などが平文設定
+  - 例：`SECRET_KEY: 'dify-9f73s3ljTXVcMT3...'`（application.bicep L:184）
+  - 例：`DB_PASSWORD: postgresAdminPassword`（application.bicep L:219）
+- **仕様との齟齬**: [70_secret.md](./spec/70_secret.md) では「平文環境変数表示を回避」を要件としているが、現実装では Key Vault 参照が未実装
+- **推奨改善**:
+  - Container Apps シークレットオブジェクトを利用し、Key Vault 参照を定義
+  - Managed Identity を各 Container App に付与し、Key Vault への読み取りアクセスを許可
+  - Environment variable から秘密値の参照に変更
+- **優先度**: **P0 セキュリティ対応**
+
+### S2. OAuth2 Proxy: リダイレクト URL とカスタムドメイン連携
+- **状況**: 
+  - edge-runtime.bicep で OAUTH2_PROXY_REDIRECT_URL は `https://${acaDifyCustomerDomain}/oauth2/callback` を設定（L:104）
+  - `acaDifyCustomerDomain` パラメータは `dify.example.com` のテンプレート値
+- **不明点**:
+  - カスタムドメインの DNS 解決、SSL 証明書の手動設定が必要か
+  - Entra App Registration での Redirect URI の登録が必要か（手動手順かスクリプト化するか）
+  - 証明書が提供されない場合（開発環境）の動作確認は?
+- **推奨改善**:
+  - `acaDifyCustomerDomain` の有効性検証ルール（DNS resolve チェック）
+  - Entra App Registration 設定ガイドの詳細化（README または Runbook）
+  - 開発環境用の `localhost` / 自己署名証明書ハンドリングの確認
+- **優先度**: **P1 運用ガイド補強**
+
+### S3. Application Gateway: oauth2-proxy health probe パス
+- **状況**: appgw.bicep で health probe は `path: '/oauth2/ping'` に設定（L:276）
+- **不明点**:
+  - `/oauth2/ping` エンドポイントが oauth2-proxy に実装されているか
+  - 認証後のバックエンド (nginx:80) が健全か判定できるか、プローブはレイヤーがどこまで見ているか
+  - 502/503 エラーの切り分け観点は?
+- **推奨改善**:
+  - Probe パスの動作確認・テスト実施
+  - Probe 失敗時のデバッグ手順（ログ取得、サービス再起動）をドキュメント化
+  - 監視アラート設定（503 Gateway Service Unavailable 時の通知）
+- **優先度**: **P1 運用安定性**
+
+### S4. APIM 統合: 現状プレースホルダー
+- **状況**: 
+  - [apim.bicep](./modules/apim.bicep) は定義されているが、main.bicep から呼び出されていない（コメントアウト未確認）
+  - [30_api.md](./spec/30_api.md) では「将来的に API 経路を APIM 経由に切り替え」と記載
+- **現行実装**:
+  - Dify API は nginx を経由し、OAuth2 Proxy で Entra 認証→API へ
+- **不明点**:
+  - APIM 統合のスコープ（いつ実施するか）と優先度は?
+  - OAuth2 Proxy（セッションクッキー）と APIM（Bearer Token）の認証分離方針は?
+- **推奨改善**:
+  - APIM 統合を P0/P1 の誰かのタスクに明示的に割り当てるか、バックログに移すか決定
+  - 決定次第、[apim.bicep](./modules/apim.bicep) の呼び出し有効化 OR 削除
+- **優先度**: **P2 戦略決定**
+
+### S5. AOAI 統合: 手動投入ポリシー
+- **状況**: 
+  - [40_aoai.md](./spec/40_aoai.md) では「Bicep テンプレートに AOAI 作成モジュール未含」、管理者が Dify Web から手動設定
+- **現行実装**:
+  - `aoai.bicep` 未作成、main.bicep に呼び出しなし
+  - Container Apps 環境変数に AOAI endpoint/key の投入方法が未定
+- **不明点**:
+  - AOAI API Key をどこに保管するか（Key Vault への自動登録？手動？）
+  - Container Apps からの Key Vault 参照方法（参照: S1 セキュリティ改善と連動）
+  - 複数 AOAI デプロイの管理方法（開発/本番環境別）
+- **推奨改善**:
+  - AOAI 統合の実装時期を決定（P0/P1/P2 または外部タスク）
+  - 決定に応じて aoai.bicep スケルトンを作成 OR バックログに記載
+- **優先度**: **P1 IaC 完成度向上**
+
+### S6. deploy.ps1: 複雑性と保守性
+- **状況**:
+  - deploy.ps1 は Bicep デプロイ後のファイルアップロード処理を担当（L:100-300）
+  - azcopy / az CLI の自動フォールバック、SAS トークン / ストレージキー切り替え
+- **リスク**:
+  - ファイルアップロード失敗時の前進/後退戻しが複雑
+  - Windows/Mac/Linux での互換性確認が不十分の可能性
+  - スクリプト長で保守が困難
+- **推奨改善**:
+  - Bicep 内で Azure Files の初期化を進める（storage.bicep または aca-env.bicep で）
+  - deploy.ps1 を段階的に簡素化（Bicep の役割拡大）
+  - 単体テスト / CI 統合による動作検証
+- **優先度**: **P2 長期保守性**
+
+---
+
 ## 7. 実装未定項目の計画（Decision Backlog）
 
 以下は、現時点で実装方式が未確定のため、**先に意思決定タスクを実施**する項目です。
