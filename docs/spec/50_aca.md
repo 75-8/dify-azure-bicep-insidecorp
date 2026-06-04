@@ -8,8 +8,8 @@
 ## 方針
 - ACA Environment は VNet 統合された internal managed environment とし、インフラストラクチャサブネットへ閉域配置する。
 - Container Apps は `nginx/web/api/worker/sandbox/plugin/ssrfproxy` を構成単位とする。
-- `web/api/worker/sandbox/plugin/ssrfproxy` は ACA Environment 内の内部通信を前提とし、external ingress は持たない。
-- 外部からの入口は `nginx` Container App に集約する。`nginx` は external ingress を持つが、`allowedIngressCidrs` による許可リストと `deny-all` の IP 制限で社内・許可済み CIDR からの到達に限定する。
+- `web/api/worker/sandbox/plugin/ssrfproxy` は ACA Environment 内の内部通信を前提とし、外部公開用の Ingress は持たない。
+- 外部からの入口は `nginx` Container App に集約する。`nginx` は `external: false`（内部 Ingress）として構成し、VNet 内部からのみアクセス可能とする。そのうえで、`allowedIngressCidrs` による許可リストと `deny-all` の IP 制限で社内・許可済み CIDR からの到達に限定する。
 - カスタム証明書が提供される場合は ACA Environment に証明書を登録し、`nginx` ingress の custom domain に関連付ける。
 
 ## 実行責務の3分割
@@ -64,6 +64,6 @@ ACA 定義は従来の単一 `aca-env.bicep` に全リソースを直接記述�
 - Key Vault 参照を利用する場合は、Container Apps の secret / Key Vault reference と managed identity の設計を追加し、環境変数へ平文値を直接展開しない構成へ移行する。
 
 ## 実装との差分・注意事項
-- 現行実装の `nginx` は external ingress であり、Gateway 専用公開ではない。公開制御は `allowedIngressCidrs` と `deny-all` の `ipSecurityRestrictions` によって行う。
-- `web/api/sandbox/plugin/ssrfproxy` は internal ingress、`worker` は ingress なしで構成する。
-- `infra/modules/aca-env.bicep` が従来の ACA モジュール名・呼び出し口を維持し、`infra/modules/aca-env/` 配下の 3 分割モジュールを内部で呼び出す。
+- **`nginx` の Ingress 設定**: `nginx` Container App は `external: false`（内部 Ingress）で定義されている。これにより、環境は VNet 内部に閉じられ、リクエストは Application Gateway ([appgw.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/appgw.bicep)) 経由でのみ到達する。
+- **他サービスの Ingress 設定**: `web/api/sandbox/plugin/ssrfproxy` は `external: false`（内部 Ingress）、`worker` は Ingress なし（ルーティング不可）として構成する。
+- **オーケストレーション**: [aca-env.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/aca-env.bicep) が親モジュールとして呼び出し口を提供し、内部で `platform.bicep`、`edge-runtime.bicep`、`application.bicep` の 3 分割モジュールを呼び出す。

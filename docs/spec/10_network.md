@@ -2,22 +2,34 @@
 
 ## スコープ
 - VNet / Subnet 設計
-- NSG 設計
+- NSG (Network Security Group) 設計
 - Application Gateway（WAFなし）
 - Private Endpoint / Private DNS
 
 ## 方針
-- 公開入口は Application Gateway のみに限定する。
-- ACA は internal 運用とし、外部公開しない。
-- サブネット境界は NSG で最小権限制御する。
+- 公開入口は Application Gateway ([appgw.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/appgw.bicep)) のみに限定する。
+- ACA 環境 ([aca-env.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/aca-env.bicep)) は internal 運用とし、インターネットへ直接露出させない。
+- 各サブネット境界は NSG ([nsg.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/nsg.bicep)) を用いて最小権限で制御する。
 
-## 主要要件
-- `AppGatewaySubnet` / `ACASubnet` / `PostgresSubnet` / `PrivateLinkSubnet` を定義する。
-- 各サブネットへ NSG を関連付ける。
-- App Gateway backend は ACA internal endpoint を参照する。
+## サブネット設計仕様
+VNet 名は `vnet-${location}` とし、以下のサブネットおよび NSG を構成する（詳細は [network.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/network.bicep) 参照）：
 
-## 未確認事項（spec未記載・コード記載）
-- `infra/modules/network.bicep` では `AppGatewaySubnet` が未定義（`PrivateLinkSubnet`/`ACASubnet`/`PostgresSubnet` のみ定義）。
-- `infra/modules/network.bicep` の VNet 名は `vnet-${location}` 固定命名。
-- `infra/modules/network.bicep` の `PostgresSubnet` に `Microsoft.Storage` service endpoint が設定されている。
+| サブネット名 | アドレス帯 (CIDR) | 関連付け NSG | 役割と特徴 |
+|---|---|---|---|
+| `PrivateLinkSubnet` | `ipPrefix.0.0/24` | `nsg-privatelink` | Key Vault、Redis、Storage などの Private Endpoint を配置する。 |
+| `ACASubnet` | `ipPrefix.2.0/23` | `nsg-aca` | ACA 環境に委譲（delegation）され、Dify コンポーネントをホストする。 |
+| `PostgresSubnet` | `ipPrefix.4.0/24` | `nsg-postgres` | PostgreSQL Flexible Server に委譲される。`Microsoft.Storage` サービスエンドポイントを有効化する。 |
+| `AppGwSubnet` | `ipPrefix.5.0/24` | `nsg-appgw` | Application Gateway 専用のサブネット。委譲なし。 |
+
+## 主なトラフィック制御ルール（NSG 仕様）
+- **`nsg-appgw`**: インターネットまたは指定された `allow_ip` からの HTTP/HTTPS (80/443) トラフィック、および `GatewayManager` からの管理トラフィックのみを許可。
+- **`nsg-aca`**: `AppGwSubnet` からの OAuth2 Proxy ポート (4180) へのインバウンド接続、および ACA サブネット内部の通信のみを許可。
+- **`nsg-privatelink`**: ACA サブネット (`ACASubnet`) からの HTTPS (443) および Redis (6379) トラフィックのみを許可。
+- **`nsg-postgres`**: ACA サブネット (`ACASubnet`) からの PostgreSQL (5432) トラフィックのみを許可。
+
+## Bicep実装との整合性
+- **`vnet-${location}` の固定命名**: [network.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/network.bicep) 内で定義されており、パラメータで変更せずリソースグループの場所に基づいて自動決定される。
+- **PostgreSQL サブネットのサービスエンドポイント**: Azure File Share または Blob 接続等のため、PostgreSQL の委譲サブネットに `Microsoft.Storage` サービスエンドポイントが構成されている。
+- **Application Gateway のバックエンドターゲット**: ACA にデプロイされた Nginx Container App の内部 FQDN (`nginx.<default-domain>`) を直接バックエンドプールに指定している。
+
 

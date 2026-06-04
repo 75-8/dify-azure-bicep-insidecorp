@@ -1,42 +1,39 @@
 # 30_api
 
 ## スコープ
-- Dify API 経路の保護設計（実装保留）
-- API インターフェース先行定義
+- Dify API 経路 (`/v1/*`) の保護設計
+- API Management (APIM) による認証制御方針
+- 将来的なエンドポイント分離
 
-## To-Be
-`Client -> APIM (/v1) -> (Private) ACA api`
+## 現状の暫定経路 (As-Is)
+現在、APIM 経由の経路はインフラに組み込まれておらず、Dify UI と同様に以下の経路でルーティングされ保護されている：
+```text
+Client -> Application Gateway (ポート 80/443)
+       -> nginx Container App / OAuth2 Proxy (ポート 4180、Entra OIDC 認証強制)
+       -> nginx (ポート 80)
+       -> api Container App (ポート 5001)
+```
 
-## インターフェース方針
-- OAuth 2.0（Bearer Token）必須。
-- パスベース versioning（`/v1/...`）。
-- エラー形式は `code` / `message` / `traceId` を共通化。
+## 将来的な目標構成 (To-Be)
+UI 画面と API エンドポイントの認証ライフサイクルを分離するため、将来的に API 経路を APIM 経由に切り替える：
+```text
+[Dify UI 経路]
+Client -> Application Gateway -> OAuth2 Proxy -> nginx -> web Container App (ポート 3000)
 
-## 実装保留
-- `infra/modules/apim.bicep` の作成
-- OAuth連携設定
-- OpenAPI import
+[Dify API 経路]
+Client -> APIM (OAuth 2.0 Bearer トークン検証) -> api Container App (ポート 5001)
+```
 
+## Bicep モジュールステータス ([apim.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/apim.bicep))
+- **現実装**: `infra/modules/apim.bicep` にて APIM リソース（Consumption/Developer SKU）が定義されている。
+- **ID 構成**: APIM には `SystemAssigned` Managed Identity が有効化されている。
+- **公開アクセス**: 現在 `publicNetworkAccess` は `'Enabled'` に設定されている。
+- **制限**: 現行モジュールは APIM インスタンスの作成のみを行う最小限の定義であり、[main.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/main.bicep) からはまだ呼び出されていない。また、OpenAPI 定義のインポート設定や、OAuth2 のトークン検証ポリシー定義は含まれていない。
 
-## OAuth2 Proxy 連携（UI 経路）
-- OAuth2 Proxy は Dify `/ui` リクエスト経路の認証保護を担当する。
-- OAuth2 Proxy は Entra ID(OIDC)で認証し、未認証アクセスを遮断する。
-- `/v1` API 経路は APIM 側で保護し、OAuth2 Proxy 側と責務分離する。
+## 将来の課題（APIM 統合時のロードマップ）
+- **[main.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/main.bicep) への組み込み**: APIM モジュール呼び出しの有効化。
+- **ポリシーの実装**: JWT/OAuth2 トークン検証用のインバウンドポリシーの定義。
+- **APIスキーマの取り込み**: Dify API の OpenAPI 仕様書インポートの自動化。
+- **マネージド ID による保護**: APIM からバックエンド（`api` Container App）への接続時に Managed Identity による認証/アクセス制御を検討。
 
-
-## 経路分離方針
-- **/ui 系リクエスト経路**: `Client -> App Gateway -> OAuth2 Proxy -> ACA(web/ui)`
-- **/v1 API リクエスト経路**: `Client -> APIM -> ACA(api)`
-- UI と API は経路・責務を分離し、ポリシーを独立管理する。
-
-
-## APIM 認証実装方針（/v1）
-- APIM 側は **Managed Identity** を使用する想定とする。
-- APIM からバックエンド（ACA api）呼び出し時は、必要に応じて MI ベース認証を適用する。
-- APIM のポリシーでトークン取得/付与方式を標準化し、手動シークレット配布を禁止する。
-
-## 未確認事項（spec未記載・コード記載）
-- `infra/modules/apim.bicep` は `SystemAssigned` Managed Identity を有効化している。
-- `infra/modules/apim.bicep` は `publicNetworkAccess: 'Enabled'` で作成される。
-- `infra/modules/apim.bicep` は API 定義（OpenAPI import）や OAuth2 検証ポリシーを含まない。
 
