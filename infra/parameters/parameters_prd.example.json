@@ -36,6 +36,9 @@
     "oauth2ProxyCookieSecret": { "value": "REPLACE_WITH_GENERATED_COOKIE_SECRET" },
     "allow_ip": { "value": ["*"] },
     "appGwCertBase64Value": { "value": "" },
-    "appGwCertPassword": { "value": "" }
+    "appGwCertPassword": { "value": "" },
+    "acaApiCustomerDomain": { "value": "api.example.com" },
+    "appGwApiCertBase64Value": { "value": "" },
+    "appGwApiCertPassword": { "value": "" }
   }
 }

@@ -140,8 +140,91 @@ urlPathMap: {
 ### リクエストルーティング優先度（Priority）
 - **Priority 100** (HTTPS リスナー): 通常リクエスト → URL パス マッピング処理
 - **Priority 200** (HTTP リスナー): HTTP → HTTPS リダイレクト（証明書あり時のみ）
+- **Priority 300** (API HTTPS リスナー): API プレースホルダー → 404 固定応答（証明書あり時のみ）
 
-**優先度の意義**: 複数ルールが存在する場合、優先度の低い番号から評価される。HTTPS ルールを先に処理することで、セキュアなルーティングを保証。
+**優先度の意義**: 複数ルールが存在する場合、優先度の低い番号から評価される。ホスト名ベースの API リスナーは優先度 300 で処理され、セキュアに予約ドメインを保護する。
+
+## API プレースホルダーのホスト名ベースルーティング（将来予約）
+
+### 背景
+API エンドポイント（api.example.com）は将来の API Management (APIM) + Bearer Token 認証の実装に備えて予約されている。初期リリースでは API 認証の実装コスト削減のため、本エンドポイントへのアクセスは **404 固定応答** で即座に遮断される。
+
+### 設計
+```
+┌─────────────────────┐
+│    Internet         │
+│ api.example.com/... │
+└──────────┬──────────┘
+           │
+           ▼
+┌──────────────────────────────────────────────────────┐
+│  Application Gateway (appgw.bicep)                  │
+│  - Listener: httpsApiListener (hostname: api.*)     │
+│  - Routing Rule: apiPlaceholderRule (Priority: 300) │
+│  - Response: 404 Not Found (Fixed Response)         │
+│  ✅ DNS: Reserved                                    │
+│  ✅ Certificate: Reserved                            │
+│  ❌ Backend: NONE (Blocked)                          │
+│  ❌ APIM: Not Connected                              │
+│  ❌ ACA: Not Accessible                              │
+└──────────────────────────────────────────────────────┘
+```
+
+### ホスト名ベースリスナー
+```bicep
+httpsApiListener: {
+  name: 'httpsApiListener'
+  properties: {
+    protocol: 'Https'
+    sslCertificate: {
+      id: resourceId(..., 'appgw-api-cert')
+    }
+    hostName: acaApiCustomerDomain  // e.g., 'api.example.com'
+    frontendPort: 443
+  }
+}
+```
+
+### 固定応答ルーティング
+```bicep
+apiPlaceholderRule: {
+  name: 'apiPlaceholderRule'
+  properties: {
+    ruleType: 'Basic'
+    priority: 300
+    httpListener: { id: resourceId(..., 'httpsApiListener') }
+    fixedResponseConfiguration: {
+      id: resourceId(..., 'apiNotFoundResponse')
+    }
+  }
+}
+```
+
+**特性**:
+- **バックエンドプールなし**: APIM・ACA への接続なし
+- **ヘルスプローブなし**: バックエンド監視不要
+- **固定応答**: HTTP 404 Not Found（空ボディ）
+
+### 移行計画（To-Be）
+将来 APIM 導入時に、以下のみ変更で対応可能：
+- ✅ DNS レコード: **変更不要**（同一ドメイン）
+- ✅ TLS 証明書: **変更不要**（同一証明書）
+- ✅ リスナー: **変更不要**（同一ホスト名・ポート）
+- ⚠️ ルーティングルール: `fixedResponseConfiguration` → `backendAddressPool` (APIM) に変更
+
+**アップグレードパス**:
+```bicep
+// 初期リリース
+apiPlaceholderRule: {
+  fixedResponseConfiguration: { id: ... 'apiNotFoundResponse' }
+}
+
+// 将来 APIM 導入時
+apiPlaceholderRule: {
+  backendAddressPool: { id: ... 'backendPool-apim' }
+  backendHttpSettings: { id: ... 'backendHttpSettings-apim' }
+}
+```
 
 ## Bicep 実装との整合性
 
@@ -158,6 +241,9 @@ urlPathMap: {
 | `isProvidedCert` | bool | SSL 証明書提供フラグ | `true` / `false` |
 | `appGwCertBase64Value` | string (secure) | PFX 証明書 Base64 値（提供時のみ） | `MIIJrQIBAzCC...` |
 | `appGwCertPassword` | string (secure) | PFX 証明書パスワード（提供時のみ） | `(sensitive)` |
+| `acaApiCustomerDomain` | string | API カスタムドメイン（予約・将来用） | `api.example.com` |
+| `appGwApiCertBase64Value` | string (secure) | API SSL 証明書 Base64 値（提供時のみ） | `MIIJrQIBAzCC...` |
+| `appGwApiCertPassword` | string (secure) | API SSL 証明書パスワード（提供時のみ） | `(sensitive)` |
 
 ### リソース命名規則
 - **Application Gateway**: `${appGwName}` (通常 `dify-appgw`)

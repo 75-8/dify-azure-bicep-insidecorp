@@ -1,122 +1,50 @@
-# Agents Guide
+# AGENTS.md
 
-このドキュメントは、リポジトリの構成とそれぞれのフォルダ・ファイルへのナビゲーションを提供します。
+## Purpose
 
-## リポジトリ構成
+This repository manages Infrastructure as Code (IaC) for deploying and operating a Dify platform on Azure.
 
-### 📋 ルートファイル
+## Source of Truth
 
-| ファイル | 説明 |
-|---------|------|
-| [`main.bicep`](./main.bicep) | メインのBicep構成ファイル。Azure リソースのプロビジョニング定義 |
-| [`deploy.ps1`](./deploy.ps1) | PowerShellデプロイメントスクリプト。`az login` 後に実行 |
-| [`infra/parameters/parameters_dev.example.json`](./infra/parameters/parameters_dev.example.json) | 開発環境向けパラメータ設定のテンプレート。コピーして `infra/parameters.json` を作成 |
-| [`infra/parameters/parameters_prd.example.json`](./infra/parameters/parameters_prd.example.json) | 本番環境向けパラメータ設定のテンプレート。コピーして `infra/parameters.json` を作成 |
-| [`README.md`](./README.md) | プロジェクト全体の説明とデプロイ手順 |
+* Infrastructure definitions: `main.bicep` and `modules/`
+* Architecture and design decisions: `docs/`
+* Deployment instructions: `README.md`
 
-### 📁 フォルダ構成
+Do not duplicate information that already exists in code or other documentation.
 
-#### [`docs/`](./docs/)
+## Change Guidelines
 
-ドキュメントとアーキテクチャ設計が格納されています。
+When making changes, prioritize the following:
 
-**主なファイル:**
-- `dify-azure-infra.drawio` - インフラ構成図（draw.io形式）
-- `current-architecture-spec.yaml` - 現行アーキテクチャ仕様書
-- `aoai-entra-auth-spec.md` - Azure OpenAI + Entra ID 認証設計ドキュメント
-- `security_guardrails.md` - セキュリティ境界とNSG制御の提案
+1. Preserve module reusability.
+2. Maintain existing security boundaries.
+3. Preserve parameter compatibility whenever possible.
+4. Minimize impact on production environments.
 
-**参照:** 詳細は [`README.md` の Infrastructure Diagram セクション](./README.md#infrastructure-diagram-drawio) を確認してください。
+## Security Requirements
 
-#### [`modules/`](./modules/)
+* Never hardcode secrets or credentials.
+* Do not commit `infra/parameters.json`.
+* Any new public endpoint must be explicitly justified.
+* Any relaxation of network restrictions must be documented.
 
-Bicep モジュール（再利用可能なコンポーネント）が格納されています。
+## Repository Areas
 
-**役割:**
-- Azure リソース（Storage、PostgreSQL、Redis、ACA など）を モジュール化
-- `main.bicep` から参照される個別リソース定義
+### docs/
 
-**参照:** 各モジュールは `main.bicep` から以下のようにして利用されます：
-```bicep
-module storageModule './modules/storage.bicep' = {
-  // ...
-}
-```
+Contains architecture specifications, design decisions, and security guidance.
 
-#### [`mountfiles/`](./mountfiles/)
+### modules/
 
-コンテナへのマウント用設定ファイルが格納されています。
+Contains reusable Azure resource definitions.
 
-**役割:**
-- アプリケーション設定ファイル
-- コンテナ起動時に必要な初期化スクリプトやコンフィグ
+## Validation
 
-**参照:** 詳細はスクリプトまたはドキュメントを確認してください。
+Before submitting changes, verify:
 
-#### [`terraform_old/`](./terraform_old/)
+* Bicep files compile successfully.
+* Resource dependencies remain valid.
+* Existing parameter compatibility is maintained.
+* Security settings are not unintentionally weakened.
 
-**⚠️ レガシー** - Terraform 実装（廃止）
-
-現在のプロジェクトは **Bicep** で実装されています。本フォルダは過去の Terraform 構成の参考資料として保持されています。
-
-**参照:** 新しいデプロイは [`main.bicep`](./main.bicep) と [`deploy.ps1`](./deploy.ps1) を使用してください。
-
-詳細は [`terraform_old/README.md`](./terraform_old/README.md) を確認してください。
-
-## クイックスタート
-
-1. **リポジトリをクローン**
-   ```bash
-   git clone https://github.com/75-8/dify-azure-bicep-insidecorp.git
-   cd dify-azure-bicep-insidecorp
-   ```
-
-2. **パラメータファイルを作成**
-   ```bash
-   cp infra/parameters/parameters_dev.example.json infra/parameters.json
-   # または本番環境:
-   cp infra/parameters/parameters_prd.example.json infra/parameters.json
-   # 必要な値を編集（パスワード、ドメインなど）
-   ```
-
-3. **Azure にログイン**
-   ```bash
-   az login
-   az account set --subscription <subscription-id>
-   ```
-
-4. **デプロイ実行**
-   ```bash
-   ./deploy.ps1
-   ```
-
-詳細は [`README.md`](./README.md#kick-start) を参照してください。
-
-## リソースマッピング
-
-| Azure リソース | 役割 | 設定ファイル |
-|---------------|------|----------|
-| **Azure Container Apps** | Dify のマイクロサービス（nginx、web、api、worker、sandbox、ssrf_proxy） | `main.bicep` / `modules/` |
-| **Azure Database for PostgreSQL** | DB・ベクトルDB | `main.bicep` / `modules/` |
-| **Azure Cache for Redis** | キャッシュ・セッション | `main.bicep` / `modules/` |
-| **Storage Account** | ファイルストレージ | `main.bicep` / `modules/` |
-| **Virtual Network** | ネットワーク分離・セキュリティ | `main.bicep` |
-
-## セキュリティに関する重要な注意
-
-⚠️ **`infra/parameters.json` には機密情報が含まれます**
-
-- `.gitignore` で保護されています
-- **決してコミット・プッシュしないでください**
-- 本番環境では強力なパスワードを使用してください
-
-詳細は [`README.md` の Security Notice セクション](./README.md#️-security-notice) を参照してください。
-
-## トラブルシューティング
-
-各フォルダの詳細については、以下を参照してください：
-
-- **デプロイエラー** → [`README.md`](./README.md)
-- **アーキテクチャ疑問** → [`docs/current-architecture-spec.yaml`](./docs/current-architecture-spec.yaml)
-- **セキュリティ設定** → [`docs/security_guardrails.md`](./docs/security_guardrails.md)
-- **旧Terraform参考** → [`terraform_old/README.md`](./terraform_old/README.md)
+Refer to `README.md` or the `docs/` directory for those details.

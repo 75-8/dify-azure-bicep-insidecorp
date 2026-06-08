@@ -24,6 +24,17 @@ param appGwCertBase64Value string = ''
 @secure()
 param appGwCertPassword string = ''
 
+@description('Dify API custom domain (reserved for future use, returns 404)')
+param acaApiCustomerDomain string = 'api.example.com'
+
+@description('Application Gateway API SSL certificate Base64 data (PFX format)')
+@secure()
+param appGwApiCertBase64Value string = ''
+
+@description('Application Gateway API SSL certificate password')
+@secure()
+param appGwApiCertPassword string = ''
+
 // Public IP for Application Gateway
 resource publicIp 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
   name: publicIpName
@@ -36,15 +47,28 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2023-05-01' = {
   }
 }
 
-var sslCertificates = isProvidedCert ? [
-  {
-    name: 'appgw-cert'
-    properties: {
-      data: appGwCertBase64Value
-      password: appGwCertPassword
+var sslCertificates = concat(
+  // UI certificate (existing)
+  isProvidedCert ? [
+    {
+      name: 'appgw-cert'
+      properties: {
+        data: appGwCertBase64Value
+        password: appGwCertPassword
+      }
     }
-  }
-] : []
+  ] : [],
+  // API certificate (reserved for future use, returns 404)
+  !empty(appGwApiCertBase64Value) ? [
+    {
+      name: 'appgw-api-cert'
+      properties: {
+        data: appGwApiCertBase64Value
+        password: appGwApiCertPassword
+      }
+    }
+  ] : []
+)
 
 var frontendPorts = isProvidedCert ? [
   {
@@ -68,48 +92,70 @@ var frontendPorts = isProvidedCert ? [
   }
 ]
 
-var httpListeners = isProvidedCert ? [
-  {
-    name: 'httpListener'
-    properties: {
-      frontendIPConfiguration: {
-        id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIP')
-      }
-      frontendPort: {
-        id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'httpPort')
-      }
-      protocol: 'Http'
-    }
-  }
-  {
-    name: 'httpsListener'
-    properties: {
-      frontendIPConfiguration: {
-        id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIP')
-      }
-      frontendPort: {
-        id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'httpsPort')
-      }
-      protocol: 'Https'
-      sslCertificate: {
-        id: resourceId('Microsoft.Network/applicationGateways/sslCertificates', appGwName, 'appgw-cert')
+var httpListeners = concat(
+  // UI listeners (existing)
+  isProvidedCert ? [
+    {
+      name: 'httpListener'
+      properties: {
+        frontendIPConfiguration: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIP')
+        }
+        frontendPort: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'httpPort')
+        }
+        protocol: 'Http'
       }
     }
-  }
-] : [
-  {
-    name: 'httpListener'
-    properties: {
-      frontendIPConfiguration: {
-        id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIP')
+    {
+      name: 'httpsListener'
+      properties: {
+        frontendIPConfiguration: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIP')
+        }
+        frontendPort: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'httpsPort')
+        }
+        protocol: 'Https'
+        sslCertificate: {
+          id: resourceId('Microsoft.Network/applicationGateways/sslCertificates', appGwName, 'appgw-cert')
+        }
       }
-      frontendPort: {
-        id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'httpPort')
-      }
-      protocol: 'Http'
     }
-  }
-]
+  ] : [
+    {
+      name: 'httpListener'
+      properties: {
+        frontendIPConfiguration: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIP')
+        }
+        frontendPort: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'httpPort')
+        }
+        protocol: 'Http'
+      }
+    }
+  ],
+  // API listener (reserved for future use, returns 404)
+  !empty(appGwApiCertBase64Value) ? [
+    {
+      name: 'httpsApiListener'
+      properties: {
+        frontendIPConfiguration: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIP')
+        }
+        frontendPort: {
+          id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'httpsPort')
+        }
+        protocol: 'Https'
+        sslCertificate: {
+          id: resourceId('Microsoft.Network/applicationGateways/sslCertificates', appGwName, 'appgw-api-cert')
+        }
+        hostName: acaApiCustomerDomain
+      }
+    }
+  ] : []
+)
 
 // Redirect config
 var redirectConfigurations = isProvidedCert ? [
@@ -160,48 +206,70 @@ var urlPathMaps = [
   }
 ]
 
-var requestRoutingRules = isProvidedCert ? [
-  {
-    name: 'httpsRoutingRule'
-    properties: {
-      ruleType: 'PathBasedRouting'
-      priority: 100
-      httpListener: {
-        id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpsListener')
-      }
-      urlPathMap: {
-        id: resourceId('Microsoft.Network/applicationGateways/urlPathMaps', appGwName, 'urlPathMap')
-      }
-    }
-  }
-  {
-    name: 'httpRedirectRule'
-    properties: {
-      ruleType: 'Basic'
-      priority: 200
-      httpListener: {
-        id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpListener')
-      }
-      redirectConfiguration: {
-        id: resourceId('Microsoft.Network/applicationGateways/redirectConfigurations', appGwName, 'httpToHttpsRedirect')
+var requestRoutingRules = concat(
+  // UI routing rules (existing)
+  isProvidedCert ? [
+    {
+      name: 'httpsRoutingRule'
+      properties: {
+        ruleType: 'PathBasedRouting'
+        priority: 100
+        httpListener: {
+          id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpsListener')
+        }
+        urlPathMap: {
+          id: resourceId('Microsoft.Network/applicationGateways/urlPathMaps', appGwName, 'urlPathMap')
+        }
       }
     }
-  }
-] : [
-  {
-    name: 'httpRoutingRule'
-    properties: {
-      ruleType: 'PathBasedRouting'
-      priority: 100
-      httpListener: {
-        id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpListener')
-      }
-      urlPathMap: {
-        id: resourceId('Microsoft.Network/applicationGateways/urlPathMaps', appGwName, 'urlPathMap')
+    {
+      name: 'httpRedirectRule'
+      properties: {
+        ruleType: 'Basic'
+        priority: 200
+        httpListener: {
+          id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpListener')
+        }
+        redirectConfiguration: {
+          id: resourceId('Microsoft.Network/applicationGateways/redirectConfigurations', appGwName, 'httpToHttpsRedirect')
+        }
       }
     }
-  }
-]
+  ] : [
+    {
+      name: 'httpRoutingRule'
+      properties: {
+        ruleType: 'PathBasedRouting'
+        priority: 100
+        httpListener: {
+          id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpListener')
+        }
+        urlPathMap: {
+          id: resourceId('Microsoft.Network/applicationGateways/urlPathMaps', appGwName, 'urlPathMap')
+        }
+      }
+    }
+  ],
+  // API placeholder routing rule (returns 404, reserved for future use)
+  !empty(appGwApiCertBase64Value) ? [
+    {
+      name: 'apiPlaceholderRule'
+      properties: {
+        ruleType: 'Basic'
+        priority: 300
+        httpListener: {
+          id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpsApiListener')
+        }
+        backendAddressPool: {
+          id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', appGwName, 'backendPool-api-placeholder')
+        }
+        backendHttpSettings: {
+          id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appGwName, 'backendHttpSettings')
+        }
+      }
+    }
+  ] : []
+)
 
 resource appGw 'Microsoft.Network/applicationGateways@2023-05-01' = {
   name: appGwName
@@ -238,28 +306,39 @@ resource appGw 'Microsoft.Network/applicationGateways@2023-05-01' = {
     urlPathMaps: urlPathMaps
     requestRoutingRules: requestRoutingRules
     redirectConfigurations: redirectConfigurations
-    backendAddressPools: [
-      {
-        name: 'backendPool-ui'
-        properties: {
-          backendAddresses: [
-            {
-              fqdn: acaNginxFqdn
-            }
-          ]
+    backendAddressPools: concat(
+      [
+        {
+          name: 'backendPool-ui'
+          properties: {
+            backendAddresses: [
+              {
+                fqdn: acaNginxFqdn
+              }
+            ]
+          }
         }
-      }
-      {
-        name: 'backendPool-api'
-        properties: {
-          backendAddresses: [
-            {
-              fqdn: acaNginxFqdn
-            }
-          ]
+        {
+          name: 'backendPool-api'
+          properties: {
+            backendAddresses: [
+              {
+                fqdn: acaNginxFqdn
+              }
+            ]
+          }
         }
-      }
-    ]
+      ],
+      // API placeholder backend pool (empty, triggers 502 which can be customized)
+      !empty(appGwApiCertBase64Value) ? [
+        {
+          name: 'backendPool-api-placeholder'
+          properties: {
+            backendAddresses: []
+          }
+        }
+      ] : []
+    )
     backendHttpSettingsCollection: [
       {
         name: 'backendHttpSettings'
@@ -293,9 +372,6 @@ resource appGw 'Microsoft.Network/applicationGateways@2023-05-01' = {
       }
     ]
   }
-  dependsOn: [
-    publicIp
-  ]
 }
 
 output appGwId string = appGw.id

@@ -48,6 +48,7 @@ graph TB
                 PE_Redis["pe-redis"]
                 PE_Blob["pe-blob"]
                 PE_File["pe-file"]
+                PE_AOAI["pe-aoai"]
             end
 
             subgraph DataServices["Data Services"]
@@ -55,6 +56,7 @@ graph TB
                 Redis["Azure Cache<br/>for Redis<br/>(redis-cache.bicep)"]
                 Blob["Storage Account<br/>Blob Storage<br/>(storage.bicep)"]
                 FileShare["Azure Files<br/>(nginx, sandbox, etc.)"]
+                AOAI["Azure OpenAI Service<br/>(aoai.bicep)"]
             end
 
             PostgreSQL["PostgreSQL<br/>Flexible Server<br/>(postgresql.bicep)<br/>- dify DB<br/>- vector DB (pgvector)"]
@@ -62,15 +64,16 @@ graph TB
 
         subgraph FutureLayer["🟦 Future Layer (To-Be)"]
             APIM["API Management<br/>(apim.bicep)<br/>[Future]"]
-            AOAI["Azure OpenAI<br/>Service<br/>[Future]"]
         end
     end
 
     Client -->|HTTP/HTTPS| PIP
     PIP -->|Port 80/443| AppGw
-    AppGw -->|Port 4180<br/>Path-Based Routing| Nginx
+    AppGw -->|Hostname: dify.example.com<br/>Port 4180<br/>Path-Based Routing| Nginx
     
-    AppGw -->|"/v1/* , /api/*"<br/>Future Route| APIM
+    AppGw -->|Hostname: api.example.com<br/>Port 443 HTTPS<br/>Fixed Response: 404| ApiPlaceholder["API Placeholder<br/>(Reserved)<br/>404 Not Found"]
+    
+    AppGw -.->|"/v1/* , /api/*"<br/>Future: APIM| APIM
     
     VNet -.-> AppGwSubnet
     VNet -.-> ACASubnet
@@ -88,6 +91,7 @@ graph TB
     Web -->|Port 3000| Web
     API -->|Internal| Worker
     API -->|HTTP Proxy| SSRF
+    API -->|Private Endpoint<br/>privatelink.openai.azure.com| AOAI
 
     Sandbox -->|Mount| FileShare
     Plugin -->|Mount| FileShare
@@ -102,6 +106,7 @@ graph TB
     PE_Redis -.->|DNS| Redis
     PE_Blob -.->|DNS| Blob
     PE_File -.->|DNS| FileShare
+    PE_AOAI -.->|DNS| AOAI
 
     ACAEnv -->|FQDN<br/>postgres.database...| PostgreSQL
 
@@ -118,6 +123,7 @@ graph TB
     style EdgeRuntime fill:#a5d6a7,stroke:#1b5e20
     style ApplicationRuntime fill:#81c784,stroke:#1b5e20
     style Secrets fill:#ffe082,stroke:#f57f17
+    style ApiPlaceholder fill:#ffcccc,stroke:#c62828
 ```
 
 ## 2. トラフィックフロー図
@@ -168,7 +174,78 @@ graph LR
     style Note fill:#ffcccc,stroke:#c62828
 ```
 
+### API プレースホルダー経路（初期リリース）
+```mermaid
+graph LR
+    Consumer["👤 API Consumer"]
+    
+    Consumer -->|1. HTTP/HTTPS<br/>Hostname: api.example.com<br/>Port 443| AppGw["Application Gateway<br/>(Hostname Listener)"]
+    AppGw -->|2. Routing Rule<br/>Priority: 300| ApiPlaceholder["API Placeholder<br/>(Reserved)"]
+    ApiPlaceholder -->|3. Fixed Response<br/>Status: 404| Response["HTTP/1.1 404<br/>Not Found<br/>(Empty Body)"]
+    
+    DNS["DNS Record<br/>api.example.com<br/>→ AppGw Public IP"]
+    Cert["TLS Certificate<br/>(Key Vault)"]
+    
+    DNS -.-> AppGw
+    Cert -.-> AppGw
+    
+    Note["⚠️ Initial Release:<br/>✅ DNS: Reserved<br/>✅ Certificate: Reserved<br/>✅ Listener: Reserved<br/>❌ No Backend Connection<br/>❌ No APIM<br/>❌ No ACA Access"]
+    
+    style Consumer fill:#fff,stroke:#666
+    style AppGw fill:#bbdefb,stroke:#1565c0
+    style ApiPlaceholder fill:#ffcccc,stroke:#c62828
+    style Response fill:#ffcccc,stroke:#c62828
+    style DNS fill:#fff9c4,stroke:#f57f17
+    style Cert fill:#fff9c4,stroke:#f57f17
+    style Note fill:#ffcccc,stroke:#c62828
+```
+
 ### API アクセス経路（将来予定）
+```mermaid
+graph LR
+    Consumer["👤 API Consumer"]
+    
+    Consumer -->|1. HTTP/HTTPS<br/>Bearer Token<br/>Path: /v1/*<br/>Hostname: api.example.com| APIM["API Management<br/>(APIM)"]
+    APIM -->|2. Token Validation<br/>Policy| APIM
+    APIM -->|3. If Valid<br/>Port 5001| API["api App<br/>(Dify API)"]
+    API -->|4. Queries| Resources["PostgreSQL<br/>Redis<br/>Blob Storage"]
+    
+    APIM -->|Key Vault<br/>Reference| KV["Key Vault"]
+    
+    Note["✅ Future (To-Be):<br/>✅ DNS: Unchanged<br/>✅ Certificate: Unchanged<br/>✅ Listener: Unchanged<br/>⚠️ Routing Rule Change<br/>   to APIM Backend"]
+    
+    style Consumer fill:#fff,stroke:#666
+    style APIM fill:#e0e0e0,stroke:#424242
+    style API fill:#a5d6a7,stroke:#1b5e20
+    style Resources fill:#ffe082,stroke:#f57f17
+    style KV fill:#fff9c4,stroke:#f57f17
+    style Note fill:#ccffcc,stroke:#2e7d32
+```
+
+### API アクセス経路（現状 - UI と共有）
+```mermaid
+graph LR
+    Consumer["👤 API Consumer"]
+    
+    Consumer -->|1. HTTP/HTTPS<br/>Path: /v1/* | AppGw["Application Gateway"]
+    AppGw -->|2. Port 4180| OAuth2["OAuth2 Proxy<br/>(nginx sidecar)"]
+    OAuth2 -->|3a. Auth Check<br/>Session Cookie| OAuth2
+    OAuth2 -->|3b. If Auth OK<br/>Port 80| Nginx["nginx<br/>Container App"]
+    Nginx -->|4. Upstream<br/>Port 5001| API["api App<br/>(Dify API)"]
+    API -->|5. Queries| Resources["PostgreSQL<br/>Redis<br/>Blob Storage"]
+    
+    Note2["⚠️ Current State:<br/>• API uses same UI auth<br/>  (Session Cookie)<br/>• Routed via nginx<br/>• Protected by OAuth2 Proxy"]
+    
+    style Consumer fill:#fff,stroke:#666
+    style AppGw fill:#bbdefb,stroke:#1565c0
+    style OAuth2 fill:#fff9c4,stroke:#f57f17
+    style Nginx fill:#c8e6c9,stroke:#2e7d32
+    style API fill:#a5d6a7,stroke:#1b5e20
+    style Resources fill:#ffe082,stroke:#f57f17
+    style Note2 fill:#ffcccc,stroke:#c62828
+```
+
+### 従来の API アクセス経路（変更前）
 ```mermaid
 graph LR
     Consumer["👤 API Consumer"]

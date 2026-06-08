@@ -110,6 +110,17 @@ param appGwCertBase64Value string = ''
 @secure()
 param appGwCertPassword string = ''
 
+@description('Dify API custom domain (reserved for future use, returns 404)')
+param acaApiCustomerDomain string = 'api.example.com'
+
+@description('Application Gateway API SSL certificate Base64 data (PFX format)')
+@secure()
+param appGwApiCertBase64Value string = ''
+
+@description('Application Gateway API SSL certificate password')
+@secure()
+param appGwApiCertPassword string = ''
+
 @description('Allowed source IP addresses/CIDRs for App Gateway HTTP/HTTPS inbound traffic')
 param allow_ip array = [
   '*'
@@ -254,6 +265,9 @@ module appGwModule './modules/appgw.bicep' = {
     isProvidedCert: isProvidedCert
     appGwCertBase64Value: appGwCertBase64Value
     appGwCertPassword: appGwCertPassword
+    acaApiCustomerDomain: acaApiCustomerDomain
+    appGwApiCertBase64Value: appGwApiCertBase64Value
+    appGwApiCertPassword: appGwApiCertPassword
   }
 }
 
