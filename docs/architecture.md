@@ -91,7 +91,10 @@ graph TB
     Web -->|Port 3000| Web
     API -->|Internal| Worker
     API -->|HTTP Proxy| SSRF
-    API -->|Private Endpoint<br/>privatelink.openai.azure.com| AOAI
+    API -->|Private Endpoint<br/>privatelink.openai.azure.com| PE_AOAI
+    PE_AOAI -.->|DNS| AOAI
+    %% AOAI traffic bypasses SSRF proxy
+    API -->|"Direct (bypass SSRF)<br/>privatelink.openai.azure.com"| AOAI
 
     Sandbox -->|Mount| FileShare
     Plugin -->|Mount| FileShare
@@ -162,6 +165,10 @@ graph LR
     OAuth2 -->|3b. If Auth OK<br/>Port 80| Nginx["nginx<br/>Container App"]
     Nginx -->|4. Upstream<br/>Port 5001| API["api App<br/>(Dify API)"]
     API -->|5. Queries| Resources["PostgreSQL<br/>Redis<br/>Blob Storage"]
+    %% AOAI accessed via private endpoint, bypassing SSRF proxy
+    API -->|"AOAI Private Endpoint<br/>privatelink.openai.azure.com (bypass SSRF)"| AOAI["Azure OpenAI Service"]
+    %% Credential handling note (API does not retain AOAI key)
+    API -->|Note: AOAI API key managed manually in Dify| NoteCred["(AOAI key manual)" ]
     
     Note["⚠️ Note: API 認証は<br/>UI と同一の<br/>セッション方式"]
     
