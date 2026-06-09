@@ -5,7 +5,7 @@
 - Dify アプリケーションとの連携方式
 
 ## 現状の実装・運用仕様 (As-Is)
-- **非管理リソース**: 現時点の Bicep テンプレートには、Azure OpenAI サービス自体をデプロイするモジュール（例: `aoai.bicep`）は含まれていない。また、[main.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/main.bicep) および Container Apps 側のパラメータにも AOAI 接続設定は定義されていない。
+- **非管理リソース**: 現時点の Bicep テンプレートには、Azure OpenAI サービス自体をデプロイするモジュール（例: `aoai.bicep`）は含まれていない。また、[main.bicep] および Container Apps 側のパラメータにも AOAI 接続設定は定義されていない。
 - **運用回避**: Dify アプリケーション立ち上げ後、管理者が Dify Web コンソール画面から直接 Azure OpenAI のエンドポイント情報、モデルデプロイ情報、および API Key を手動で入力して連携を有効化する。
 
 ## 将来的な設計方針 (To-Be)

@@ -64,6 +64,6 @@ ACA 定義は従来の単一 `aca-env.bicep` に全リソースを直接記述�
 - Key Vault 参照を利用する場合は、Container Apps の secret / Key Vault reference と managed identity の設計を追加し、環境変数へ平文値を直接展開しない構成へ移行する。
 
 ## 実装との差分・注意事項
-- **`nginx` の Ingress 設定**: `nginx` Container App は `external: false`（内部 Ingress）で定義されている。これにより、環境は VNet 内部に閉じられ、リクエストは Application Gateway ([appgw.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/appgw.bicep)) 経由でのみ到達する。
+- **`nginx` の Ingress 設定**: `nginx` Container App は `external: false`（内部 Ingress）で定義されている。これにより、環境は VNet 内部に閉じられ、リクエストは Application Gateway ([appgw.bicep]) 経由でのみ到達する。
 - **他サービスの Ingress 設定**: `web/api/sandbox/plugin/ssrfproxy` は `external: false`（内部 Ingress）、`worker` は Ingress なし（ルーティング不可）として構成する。
-- **オーケストレーション**: [aca-env.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/aca-env.bicep) が親モジュールとして呼び出し口を提供し、内部で `platform.bicep`、`edge-runtime.bicep`、`application.bicep` の 3 分割モジュールを呼び出す。
+- **オーケストレーション**: [aca-env.bicep] が親モジュールとして呼び出し口を提供し、内部で `platform.bicep`、`edge-runtime.bicep`、`application.bicep` の 3 分割モジュールを呼び出す。

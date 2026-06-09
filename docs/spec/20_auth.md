@@ -19,7 +19,7 @@ OAuth2 Proxy は ACA 環境上の `nginx` Container App 内にサイドカーコ
 4. **コンポーネント転送**: `nginx` はリクエストのパスに応じて、同じ ACA 環境内の internal サービス (`web:3000` または `api:5001`) にトラフィックを転送する。
 
 ## パラメータ設定 (Key Vault 連携想定)
-OAuth2 Proxy の動作に必要な以下のパラメータは、[main.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/main.bicep) で引数として定義される：
+OAuth2 Proxy の動作に必要な以下のパラメータは、[main.bicep] で引数として定義される：
 - `oauth2ProxyClientId`: Entra アプリ登録のクライアント ID
 - `oauth2ProxyClientSecret`: クライアントシークレット（セキュリティ保護 `@secure()` 対象）
 - `oauth2ProxyTenantId`: テナント ID
@@ -27,6 +27,6 @@ OAuth2 Proxy の動作に必要な以下のパラメータは、[main.bicep](fil
 
 ## 将来の課題（API認証の分離）
 - 現状、API (`/v1`) パスも同一の OAuth2 Proxy / UI 認証フローを通っている。
-- 将来的には、API 経路は APIM ([apim.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/apim.bicep)) 経由とし、OAuth 2.0 (Bearer Token) 検証ポリシーを適用して UI のセッションクッキー認証と境界を分離する。
+- 将来的には、API 経路は APIM ([apim.bicep]) 経由とし、OAuth 2.0 (Bearer Token) 検証ポリシーを適用して UI のセッションクッキー認証と境界を分離する。
 
 

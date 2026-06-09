@@ -13,7 +13,7 @@
 - 各サブネット境界は NSG ([nsg.bicep](../../infra/modules/nsg.bicep)) を用いて最小権限で制御する。
 
 ## サブネット設計仕様
-VNet 名は `vnet-${location}` とし、以下のサブネットおよび NSG を構成する（詳細は [network.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/network.bicep) 参照）：
+VNet 名は `vnet-${location}` とし、以下のサブネットおよび NSG を構成する（詳細は [network.bicep]参照）：
 
 | サブネット名 | アドレス帯 (CIDR) | 関連付け NSG | 役割と特徴 |
 |---|---|---|---|
@@ -29,7 +29,7 @@ VNet 名は `vnet-${location}` とし、以下のサブネットおよび NSG �
 - **`nsg-postgres`**: ACA サブネット (`ACASubnet`) からの PostgreSQL (5432) トラフィックのみを許可。
 
 ## Bicep実装との整合性
-- **`vnet-${location}` の固定命名**: [network.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/network.bicep) 内で定義されており、パラメータで変更せずリソースグループの場所に基づいて自動決定される。
+- **`vnet-${location}` の固定命名**: [network.bicep] 内で定義されており、パラメータで変更せずリソースグループの場所に基づいて自動決定される。
 - **PostgreSQL サブネットのサービスエンドポイント**: Azure File Share または Blob 接続等のため、PostgreSQL の委譲サブネットに `Microsoft.Storage` サービスエンドポイントが構成されている。
 - **Application Gateway のバックエンドターゲット**: ACA にデプロイされた Nginx Container App の内部 FQDN (`nginx.<default-domain>`) を直接バックエンドプールに指定している。
 

@@ -9,8 +9,8 @@
 - アプリケーションで利用する機微情報（データベースパスワード、Redis 接続キー、OAuth2 クライアントシークレットなど）は一元的に保護し、テンプレートファイルや CI/CD ログに平文で記録しない。
 - Key Vault は完全閉域化し、接続元を VNet 内部に限定する。
 
-## Key Vault 実装仕様 (詳細は [keyvault.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/modules/keyvault.bicep))
-- **アクセス制御**: `enableRbacAuthorization: false` とし、従来の **Access Policies** (アクセスポリシー) による認証を採用する。許可するポリシーは [main.bicep](file:///home/sept/dify-azure-bicep-insidecorp/infra/main.bicep) の `keyVaultAccessPolicies` パラメータ経由で明示的に制御する。
+## Key Vault 実装仕様 (詳細は [keyvault.bicep])
+- **アクセス制御**: `enableRbacAuthorization: false` とし、従来の **Access Policies** (アクセスポリシー) による認証を採用する。許可するポリシーは [main.bicep] の `keyVaultAccessPolicies` パラメータ経由で明示的に制御する。
 - **ネットワーク**: `publicNetworkAccess` を `'Disabled'` に設定。`PrivateLinkSubnet` にプライベートエンドポイント (`pe-keyvault`) を配置し、プライベート DNS リンク (`privatelink.vaultcore.azure.net`) を構成する。
 
 ## 現状のシークレット連携ステータス (As-Is)
