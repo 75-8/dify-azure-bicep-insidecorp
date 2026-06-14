@@ -149,7 +149,7 @@
 
 ---
 
-## 7. 実装完了状況（2026/6/5 時点）
+## 7. 実装完了状況（2026/6/14 時点）
 
 ### ✅ 完了済み
 
@@ -158,6 +158,7 @@
 - [x] **N3. Application Gateway モジュール追加** - appgw.bicep で完全実装（URL パス分離、HTTP/HTTPS管理、probe 設定）
 - [x] **N4. ACA の完全内部化** - edge-runtime.bicep で nginx `external: false` 確認、ipSecurityRestrictions で CIDR 制限
 - [x] **N5. Private Endpoint/DNS 整合性** - 全 PaaS リソースで Private Endpoint 設定完了
+- [x] **AOAI 統合のインフラ定義** - aoai.bicep を作成し、Azure OpenAI への Private Endpoint / Private DNS Zone 経由の閉域接続を含めて main.bicep に統合完了
 
 ### ⏳ 実装継続中
 
@@ -167,7 +168,7 @@
 
 ---
 
-## 8. 新規確認事項・不明点（2026/6/5 追加）
+## 8. 新規確認事項・不明点（2026/6/14 更新）
 
 ### S1. セキュリティ: 環境変数への機微情報直接記載
 - **状況**: ACA Container Apps の環境変数に SECRET_KEY、API KEY などが平文設定
@@ -222,18 +223,15 @@
 
 ### S5. AOAI 統合: 手動投入ポリシー
 - **状況**: 
-  - [40_aoai.md](./spec/40_aoai.md) では「Bicep テンプレートに AOAI 作成モジュール未含」、管理者が Dify Web から手動設定
-- **現行実装**:
-  - `aoai.bicep` 未作成、main.bicep に呼び出しなし
-  - Container Apps 環境変数に AOAI endpoint/key の投入方法が未定
+  - `aoai.bicep` が作成され、`main.bicep` に統合完了（Private Endpoint + Private DNSによる閉域接続も実装済み）。
+  - 一方、Container Apps（`application.bicep`）側の環境変数に AOAI 接続情報（Endpoint/Key）を自動設定する仕組みは未実装。
 - **不明点**:
-  - AOAI API Key をどこに保管するか（Key Vault への自動登録？手動？）
-  - Container Apps からの Key Vault 参照方法（参照: S1 セキュリティ改善と連動）
-  - 複数 AOAI デプロイの管理方法（開発/本番環境別）
+  - Dify WebUI から手動で API キー/エンドポイントを設定する運用にするか、あるいは自動で環境変数に注入するか。
+  - 自動注入にする場合、API キーの保管方法（S1 との連携を含む Key Vault からの参照など）をどうするか。
 - **推奨改善**:
-  - AOAI 統合の実装時期を決定（P0/P1/P2 または外部タスク）
-  - 決定に応じて aoai.bicep スケルトンを作成 OR バックログに記載
-- **優先度**: **P1 IaC 完成度向上**
+  - 運用方針（手動設定 vs 自動注入）を決定。
+  - 自動注入の場合は、S1（Key Vault 連携）と連動して Bicep を修正。
+- **優先度**: **P1 運用設計**
 
 ### S6. deploy.ps1: 複雑性と保守性
 - **状況**:
