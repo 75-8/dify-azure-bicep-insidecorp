@@ -17,7 +17,7 @@ VNet 名は `vnet-${location}` とし、以下のサブネットおよび NSG �
 
 | サブネット名 | アドレス帯 (CIDR) | 関連付け NSG | 役割と特徴 |
 |---|---|---|---|
-| `PrivateLinkSubnet` | `ipPrefix.0.0/24` | `nsg-privatelink` | Key Vault、Redis、Storage などの Private Endpoint を配置する。 |
+| `PrivateLinkSubnet` | `ipPrefix.0.0/24` | `nsg-privatelink` | Key Vault、Redis、Storage、AOAI などの Private Endpoint を配置する。 |
 | `ACASubnet` | `ipPrefix.2.0/23` | `nsg-aca` | ACA 環境に委譲（delegation）され、Dify コンポーネントをホストする。 |
 | `PostgresSubnet` | `ipPrefix.4.0/24` | `nsg-postgres` | PostgreSQL Flexible Server に委譲される。`Microsoft.Storage` サービスエンドポイントを有効化する。 |
 | `AppGwSubnet` | `ipPrefix.5.0/24` | `nsg-appgw` | Application Gateway 専用のサブネット。委譲なし。 |
@@ -25,7 +25,7 @@ VNet 名は `vnet-${location}` とし、以下のサブネットおよび NSG �
 ## 主なトラフィック制御ルール（NSG 仕様）
 - **`nsg-appgw`**: インターネットまたは指定された `allow_ip` からの HTTP/HTTPS (80/443) トラフィック、および `GatewayManager` からの管理トラフィックのみを許可。
 - **`nsg-aca`**: `AppGwSubnet` からの OAuth2 Proxy ポート (4180) へのインバウンド接続、および ACA サブネット内部の通信のみを許可。
-- **`nsg-privatelink`**: ACA サブネット (`ACASubnet`) からの HTTPS (443) および Redis (6379) トラフィックのみを許可。
+- **`nsg-privatelink`**: ACA サブネット (`ACASubnet`) からの HTTPS (443) および Redis (6379) トラフィックのみを許可（AOAI の Private Endpoint 宛ての通信も 443 を使用）。
 - **`nsg-postgres`**: ACA サブネット (`ACASubnet`) からの PostgreSQL (5432) トラフィックのみを許可。
 
 ## Bicep実装との整合性

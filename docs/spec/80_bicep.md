@@ -15,6 +15,7 @@
 | `storage` | [storage.bicep] | Storage Account、Blob/File の PE、および File Shares の一括作成 |
 | `postgresql` | [postgresql.bicep] | PostgreSQL Flexible Server、データベース (`dify`/`vector`)、拡張機能の有効化 |
 | `redis` | [redis-cache.bicep] | Azure Cache for Redis および Private Endpoint の作成 |
+| `aoai` | [aoai.bicep] | Azure OpenAI Service アカウント、モデルデプロイ、および Private Endpoint / DNS の作成 |
 | `aca-env` | [aca-env.bicep] | ACA Environment と各サービス (`nginx`, `ssrfproxy`, `web`, `api`, `worker` 等) のオーケストレーション |
 | `appgw` | [appgw.bicep] | Application Gateway およびルーティング・SSL証明書・プローブの構成 |
 | `apim` | [apim.bicep] | APIM プレースホルダーモジュール（現在 [main.bicep] からは未統合） |
@@ -24,7 +25,7 @@
 
 1. **`nsgs`**: 各サブネット用の NSG を先行して定義する。
 2. **`networkModule`**: `nsgs` の Resource ID 出力を受け取り、各サブネットへ NSG をバインドして VNet をデプロイする。
-3. **`keyVaultModule` / `storageModule` / `postgresqlModule` / `redisModule`**: `networkModule` よりサブネット ID を受け取り、Private Endpoint または委譲されたネットワーク空間に各インフラリソースを並列デプロイする。
+3. **`keyVaultModule` / `storageModule` / `postgresqlModule` / `redisModule` / `aoaiModule`**: `networkModule` よりサブネット ID を受け取り、Private Endpoint または委譲されたネットワーク空間に各インフラリソースを並列デプロイする。
 4. **`acaModule`**:
    - `networkModule` から ACA 委譲サブネット ID を取得する。
    - `storageModule`、`postgresqlModule`、`redisModule` のホスト名や接続文字列などの出力を受け取り、ACA 環境および Dify のコンポーネント群をデプロイする。
@@ -33,4 +34,3 @@
 
 ## 将来的な拡張・検討事項
 - **`apim` の統合**: [apim.bicep] を [main.bicep] の依存関係（4 と 5 の間など）に組み込む。
-- **`aoai` モジュールの追加**: Azure OpenAI Service リソースを作成する `aoai.bicep` を新規追加し、3 のタイミングで並行デプロイする設計を追加する。

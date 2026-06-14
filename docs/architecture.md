@@ -29,7 +29,7 @@ graph TB
             ACAEnv["Azure Container Apps<br/>Environment (internal)"]
             
             subgraph EdgeRuntime["Edge Runtime"]
-                Nginx["nginx<br/>(External Ingress)<br/>- Public Entry Point<br/>- OAuth2 Proxy Sidecar"]
+                Nginx["nginx<br/>(Internal Ingress)<br/>- VNet Entry Point<br/>- OAuth2 Proxy Sidecar"]
                 SSRF["ssrfproxy<br/>(Squid)"]
             end
 
@@ -71,7 +71,7 @@ graph TB
     PIP -->|Port 80/443| AppGw
     AppGw -->|Hostname: dify.example.com<br/>Port 4180<br/>Path-Based Routing| Nginx
     
-    AppGw -->|Hostname: api.example.com<br/>Port 443 HTTPS<br/>Fixed Response: 404| ApiPlaceholder["API Placeholder<br/>(Reserved)<br/>404 Not Found"]
+    AppGw -->|Hostname: api.example.com<br/>Port 443 HTTPS<br/>Gateway Error: 502| ApiPlaceholder["API Placeholder<br/>(Reserved)<br/>502 Bad Gateway (Empty Pool)"]
     
     AppGw -.->|"/v1/* , /api/*"<br/>Future: APIM| APIM
     
@@ -154,7 +154,7 @@ graph LR
     style DB fill:#ffe082,stroke:#f57f17
 ```
 
-### API アクセス経路（現状）
+### API アクセス経路（現状 - UI と認証を共有）
 ```mermaid
 graph LR
     Consumer["👤 API Consumer"]
@@ -167,10 +167,8 @@ graph LR
     API -->|5. Queries| Resources["PostgreSQL<br/>Redis<br/>Blob Storage"]
     %% AOAI accessed via private endpoint, bypassing SSRF proxy
     API -->|"AOAI Private Endpoint<br/>privatelink.openai.azure.com (bypass SSRF)"| AOAI["Azure OpenAI Service"]
-    %% Credential handling note (API does not retain AOAI key)
-    API -->|Note: AOAI API key managed manually in Dify| NoteCred["(AOAI key manual)" ]
     
-    Note["⚠️ Note: API 認証は<br/>UI と同一の<br/>セッション方式"]
+    Note["⚠️ Current State:<br/>• API uses same UI auth<br/>  (Session Cookie)<br/>• Protected by OAuth2 Proxy<br/>• AOAI API key managed manually in Dify UI<br/>• AOAI bypasses SSRF proxy"]
     
     style Consumer fill:#fff,stroke:#666
     style AppGw fill:#bbdefb,stroke:#1565c0
@@ -178,25 +176,26 @@ graph LR
     style Nginx fill:#c8e6c9,stroke:#2e7d32
     style API fill:#a5d6a7,stroke:#1b5e20
     style Resources fill:#ffe082,stroke:#f57f17
+    style AOAI fill:#fff9c4,stroke:#f57f17
     style Note fill:#ffcccc,stroke:#c62828
 ```
 
-### API プレースホルダー経路（初期リリース）
+### API プレースホルダー経路（初期リリース - 予約ドメイン）
 ```mermaid
 graph LR
     Consumer["👤 API Consumer"]
     
     Consumer -->|1. HTTP/HTTPS<br/>Hostname: api.example.com<br/>Port 443| AppGw["Application Gateway<br/>(Hostname Listener)"]
-    AppGw -->|2. Routing Rule<br/>Priority: 300| ApiPlaceholder["API Placeholder<br/>(Reserved)"]
-    ApiPlaceholder -->|3. Fixed Response<br/>Status: 404| Response["HTTP/1.1 404<br/>Not Found<br/>(Empty Body)"]
+    AppGw -->|2. Routing Rule<br/>Priority: 300| ApiPlaceholder["API Placeholder<br/>(Empty Backend Pool)"]
+    AppGw -->|3. Gateway Error<br/>Status: 502| Response["HTTP/1.1 502<br/>Bad Gateway<br/>(Empty Body)"]
     
     DNS["DNS Record<br/>api.example.com<br/>→ AppGw Public IP"]
-    Cert["TLS Certificate<br/>(Key Vault)"]
+    Cert["TLS Certificate<br/>(PFX Parameter Upload)"]
     
     DNS -.-> AppGw
     Cert -.-> AppGw
     
-    Note["⚠️ Initial Release:<br/>✅ DNS: Reserved<br/>✅ Certificate: Reserved<br/>✅ Listener: Reserved<br/>❌ No Backend Connection<br/>❌ No APIM<br/>❌ No ACA Access"]
+    Note["⚠️ Initial Release:<br/>✅ DNS: Reserved<br/>✅ Certificate: Reserved<br/>✅ Listener: Reserved<br/>❌ No Backend Connection (502 Bad Gateway)<br/>❌ No APIM<br/>❌ No ACA Access"]
     
     style Consumer fill:#fff,stroke:#666
     style AppGw fill:#bbdefb,stroke:#1565c0
@@ -207,7 +206,7 @@ graph LR
     style Note fill:#ffcccc,stroke:#c62828
 ```
 
-### API アクセス経路（将来予定）
+### API アクセス経路（将来予定 - APIM 統合後）
 ```mermaid
 graph LR
     Consumer["👤 API Consumer"]
@@ -220,51 +219,6 @@ graph LR
     APIM -->|Key Vault<br/>Reference| KV["Key Vault"]
     
     Note["✅ Future (To-Be):<br/>✅ DNS: Unchanged<br/>✅ Certificate: Unchanged<br/>✅ Listener: Unchanged<br/>⚠️ Routing Rule Change<br/>   to APIM Backend"]
-    
-    style Consumer fill:#fff,stroke:#666
-    style APIM fill:#e0e0e0,stroke:#424242
-    style API fill:#a5d6a7,stroke:#1b5e20
-    style Resources fill:#ffe082,stroke:#f57f17
-    style KV fill:#fff9c4,stroke:#f57f17
-    style Note fill:#ccffcc,stroke:#2e7d32
-```
-
-### API アクセス経路（現状 - UI と共有）
-```mermaid
-graph LR
-    Consumer["👤 API Consumer"]
-    
-    Consumer -->|1. HTTP/HTTPS<br/>Path: /v1/* | AppGw["Application Gateway"]
-    AppGw -->|2. Port 4180| OAuth2["OAuth2 Proxy<br/>(nginx sidecar)"]
-    OAuth2 -->|3a. Auth Check<br/>Session Cookie| OAuth2
-    OAuth2 -->|3b. If Auth OK<br/>Port 80| Nginx["nginx<br/>Container App"]
-    Nginx -->|4. Upstream<br/>Port 5001| API["api App<br/>(Dify API)"]
-    API -->|5. Queries| Resources["PostgreSQL<br/>Redis<br/>Blob Storage"]
-    
-    Note2["⚠️ Current State:<br/>• API uses same UI auth<br/>  (Session Cookie)<br/>• Routed via nginx<br/>• Protected by OAuth2 Proxy"]
-    
-    style Consumer fill:#fff,stroke:#666
-    style AppGw fill:#bbdefb,stroke:#1565c0
-    style OAuth2 fill:#fff9c4,stroke:#f57f17
-    style Nginx fill:#c8e6c9,stroke:#2e7d32
-    style API fill:#a5d6a7,stroke:#1b5e20
-    style Resources fill:#ffe082,stroke:#f57f17
-    style Note2 fill:#ffcccc,stroke:#c62828
-```
-
-### 従来の API アクセス経路（変更前）
-```mermaid
-graph LR
-    Consumer["👤 API Consumer"]
-    
-    Consumer -->|1. HTTP/HTTPS<br/>Bearer Token<br/>Path: /v1/*| APIM["API Management<br/>(APIM)"]
-    APIM -->|2. Token Validation<br/>Policy| APIM
-    APIM -->|3. If Valid<br/>Port 5001| API["api App<br/>(Dify API)"]
-    API -->|4. Queries| Resources["PostgreSQL<br/>Redis<br/>Blob Storage"]
-    
-    APIM -->|Key Vault<br/>Reference| KV["Key Vault"]
-    
-    Note["✅ Future: API 認証を<br/>Bearer Token に分離"]
     
     style Consumer fill:#fff,stroke:#666
     style APIM fill:#e0e0e0,stroke:#424242
@@ -294,11 +248,11 @@ graph TB
 
         subgraph PostgresSubnet_Detail["PostgresSubnet<br/>(10.x.4.0/24)"]
             PostgreSQL["PostgreSQL<br/>(Delegated to Microsoft.DBforPostgreSQL)"]
-            NSG_Postgres["NSG: nsg-postgres<br/>✅ Allow: ACASubnet → port 5432<br/>✅ Allow: Backup service<br/>❌ Deny: Other"]
+            NSG_Postgres["NSG: nsg-postgres<br/>✅ Allow: ACASubnet → port 5432<br/>❌ Deny: Other"]
         end
 
         subgraph PrivateLinkSubnet_Detail["PrivateLinkSubnet<br/>(10.x.0.0/24)"]
-            PE["Private Endpoints<br/>(Key Vault, Redis, Storage)"]
+            PE["Private Endpoints<br/>(Key Vault, Redis, Storage, AOAI)"]
             NSG_PL["NSG: nsg-privatelink<br/>✅ Allow: ACASubnet → port 443<br/>✅ Allow: ACASubnet → port 6379<br/>❌ Deny: Other"]
         end
     end
@@ -328,7 +282,7 @@ graph TB
     subgraph ACAEnv["Azure Container Apps Environment<br/>(Internal, VNet integrated)"]
         
         subgraph EdgeLayer["Edge Runtime Layer"]
-            Nginx["nginx Container App<br/>━━━━━━━━━━━━━━━<br/>Image: official nginx:latest<br/>Ingress: External (port 4180)<br/>Mount: Azure Files (nginx/)<br/>━━━━━━━━━━━━━━━<br/>Sidecar: oauth2-proxy<br/>- Entra OIDC auth<br/>- Custom header injection"]
+            Nginx["nginx Container App<br/>━━━━━━━━━━━━━━━<br/>Image: official nginx:latest<br/>Ingress: Internal (port 4180)<br/>Mount: Azure Files (nginx/)<br/>━━━━━━━━━━━━━━━<br/>Sidecar: oauth2-proxy<br/>- Entra OIDC auth<br/>- Custom header injection"]
             
             SSRF["ssrfproxy Container App<br/>━━━━━━━━━━━━━━━<br/>Image: Squid proxy<br/>Ingress: Internal (port 3128)<br/>Mount: Azure Files (ssrfproxy/)<br/>━━━━━━━━━━━━━━━<br/>Used by: API/Sandbox<br/>HTTPS_PROXY env"]
         end
@@ -410,7 +364,7 @@ graph TB
     MI -.->|Future Auth| KV
     KV -.->|Future Reference| KVRef
     KVRef -.->|Future Value| SecretObj
-    SecretObj -.->|Future Mount| ContainerApps
+    SecretObj -.->|Future secretRef| ContainerApps
 
     style Mgmt fill:#f8bbd0,stroke:#c2185b
     style Bicep fill:#ffccbc,stroke:#d84315

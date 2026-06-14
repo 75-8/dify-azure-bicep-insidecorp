@@ -34,6 +34,35 @@ param keyVaultName string = 'dify-kv'
 @description('Explicit Key Vault access policies used for data-plane permissions')
 param keyVaultAccessPolicies array = []
 
+@description('Azure OpenAI account name base')
+param aoaiAccountNameBase string = 'difyaoai'
+
+@description('Azure OpenAI model deployments configuration')
+param aoaiModelDeployments array = [
+  {
+    name: 'gpt-5-4'
+    model: {
+      name: 'gpt-5.4'
+      version: '2026-04-01'
+    }
+    sku: {
+      name: 'Standard'
+      capacity: 10
+    }
+  }
+  {
+    name: 'text-embedding-ada-003'
+    model: {
+      name: 'text-embedding-ada-003'
+      version: '2'
+    }
+    sku: {
+      name: 'Standard'
+      capacity: 10
+    }
+  }
+]
+
 @description('ACA environment name')
 param acaEnvName string = 'dify-aca-env'
 
@@ -212,6 +241,19 @@ module redisModule './modules/redis-cache.bicep' = if (isAcaEnabled) {
   }
 }
 
+// Deploy Azure OpenAI with Private Endpoint
+module aoaiModule './modules/aoai.bicep' = {
+  name: 'aoaiDeploy'
+  scope: rg
+  params: {
+    location: location
+    aoaiAccountName: '${aoaiAccountNameBase}${rgNameHex}'
+    modelDeployments: aoaiModelDeployments
+    privateLinkSubnetId: networkModule.outputs.privateLinkSubnetId
+    vnetId: networkModule.outputs.vnetId
+  }
+}
+
 // Deploy ACA environment and apps
 module acaModule './modules/aca-env.bicep' = {
   name: 'acaEnvDeploy'
@@ -275,3 +317,4 @@ module appGwModule './modules/appgw.bicep' = {
 output difyAppUrl string = acaModule.outputs.difyAppUrl
 output keyVaultUri string = keyVaultModule.outputs.keyVaultUri
 output appGwPublicIp string = appGwModule.outputs.publicIpAddress
+output aoaiEndpoint string = aoaiModule.outputs.aoaiEndpoint

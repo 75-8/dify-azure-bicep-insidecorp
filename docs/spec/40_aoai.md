@@ -2,16 +2,34 @@
 
 ## スコープ
 - Azure OpenAI Service (AOAI) の作成方針
-- Dify アプリケーションとの連携方式
+- Private Endpoint および Private DNS Zone による閉域接続設計
+- SSRF Proxy を経由しない直接接続設計（バイパス）
+- API Key およびモデル定義の運用仕様
 
-## 現状の実装・運用仕様 (As-Is)
-- **非管理リソース**: 現時点の Bicep テンプレートには、Azure OpenAI サービス自体をデプロイするモジュール（例: `aoai.bicep`）は含まれていない。また、[main.bicep] および Container Apps 側のパラメータにも AOAI 接続設定は定義されていない。
-- **運用回避**: Dify アプリケーション立ち上げ後、管理者が Dify Web コンソール画面から直接 Azure OpenAI のエンドポイント情報、モデルデプロイ情報、および API Key を手動で入力して連携を有効化する。
+## 設計および実装仕様
 
-## 将来的な設計方針 (To-Be)
-自動プロビジョニングを拡張する場合、以下の方針を適用する：
-- **IaC 化**: `infra/modules/aoai.bicep` を新規追加し、Cognitive Services アカウントおよび指定されたモデル（例: GPT-4o, text-embedding-ada-002）のデプロイを定義する。
-- **キー管理**: 生成された API Key を Bicep 内から直接 Key Vault に登録する。
-- **環境変数渡し**: `api` および `worker` Container App のシークレット参照を定義し、Key Vault から自動でキーを取得できるように連携する。
+### 1. リソースプロビジョニング (IaC)
+- [aoai.bicep](../../infra/modules/aoai.bicep) モジュールを新規導入し、[main.bicep](../../infra/main.bicep) の Step 3（データ層の並列デプロイ）として統合。
+- **Cognitive Services アカウント**: `kind: 'OpenAI'` および `sku: { name: 'S0' }` で作成。
+- **モデルデプロイ**: 以下のモデル定義をデフォルト値としてデプロイ。パラメータ化されており環境ごとにオーバーライド可能。
+  - `gpt-5-4` (`gpt-5.4` バージョン `2026-04-01`)
+  - `text-embedding-ada-003` (`text-embedding-ada-003` バージョン `2`)
+
+### 2. 閉域接続設計 (Private Link)
+- **パブリックアクセス遮断**: アカウントの `publicNetworkAccess` を `Disabled` に設定し、`networkAcls.defaultAction` を `Deny` とする。
+- **Private Endpoint**: `PrivateLinkSubnet` に配置し、`pe-aoai` として構成（Target Sub-Resource: `account`）。
+- **Private DNS Zone**: `privatelink.openai.azure.com` を作成し、仮想ネットワーク (`vnet-${location}`) にリンク。これによって、VNet 内のコンポーネントが AOAI エンドポイント FQDN を Private Endpoint のプライベート IP に自動的に解決する。
+
+### 3. SSRF Proxy バイパス設計
+- Dify の外部通信プロキシ（SSRF Proxy / Squid）経由でのアクセスで発生し得るボトルネックや誤ルーティングを避けるため、`.openai.azure.com` ドメインへの通信はプロキシを介さず、VNet 経由で直接通信（`always_direct`）するよう [squid.conf](../../infra/mountfiles/ssrfproxy/squid.conf) にバイパス ACL を実装。
+
+### 4. 運用・セキュリティ仕様（API Key 手動管理）
+- **Credential 非保持原則の例外**:
+  通常は機微情報を Key Vault またはコンテナ環境変数で自動参照させますが、AOAI 連携においてはセキュリティの観点および Dify の仕様に準拠し、API Key を IaC やコンテナの環境変数に保持させません。
+- **設定手順**:
+  1. インフラデプロイ後、デプロイ出力から AOAI エンドポイント URL を取得する。
+  2. 管理者が Dify Web UI（管理者コンソール）にアクセスする。
+  3. Azure OpenAI の設定画面で、取得したエンドポイント URL と、Azure Portal 等から手動取得した API Key を入力してモデル連携を有効化する。
+
 
 

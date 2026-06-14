@@ -76,7 +76,7 @@ Phase 3: 全 API を APIM 経由に完全移行（UI 経路は App Gateway の�
 
 ## ADR-002: Azure OpenAI (AOAI) 統合スコープ
 
-**Status**: 📋 DECISION PENDING
+**Status**: 🟢 CONFIRMED
 
 **Context**:
 - 現状: AOAI リソース作成・連携は IaC に含まれていない（手動投入）
@@ -129,16 +129,17 @@ Manual:  Dify Web UI から直接設定、または環境変数に投入
   - 監査・追跡が困難
   - ヒューマンエラーのリスク
 
-**Decision Required**:
-- [ ] Option A 採用（完全自動化、将来実装予定）
-- [ ] Option B 採用（Bicep 作成 + 手動 Key 投入、推奨）
-- [ ] Option C 採用（現状維持）
+**Decision Made**: Option B（Bicep 作成 + 手動 Key 投入）+ Private Endpoint 経由アクセス
+- **ネットワーク**: `publicNetworkAccess: 'Disabled'`、Private Endpoint（`pe-aoai`）経由のみアクセス可
+- **DNS**: `privatelink.openai.azure.com` Private DNS Zone を VNet にリンク
+- **API Key**: Dify Web UI から手動設定（例外。IaC/Key Vault 管理の対象外）
+- **SSRF Proxy**: `.openai.azure.com` を Squid ACL でバイパス対象として明示定義
+- **Credential 非保持**: API/Worker コンテナの環境変数に AOAI API Key を含めない
 
-**Implementation Plan** (Option B 前提):
-1. **aoai.bicep 作成**: Cognitive Services Account + model deployments（Q3 2026）
-2. **운用 Runbook 作成**: AOAI Key 登録・ローテーション手順（Q3 2026）
-3. **Key Vault 統合**: Container App secret reference 実装（参考: ADR-003）
-4. **監査ログ設定**: AOAI API usage tracking（Q4 2026）
+**Implementation**:
+- [aoai.bicep](../infra/modules/aoai.bicep): Cognitive Services Account + model deployments + PE + DNS
+- [main.bicep](../infra/main.bicep): Step 3（data layer 並列デプロイ）として統合
+- [squid.conf](../infra/mountfiles/ssrfproxy/squid.conf): AOAI バイパス ACL 追加
 
 **Related**:
 - [docs/spec/40_aoai.md](./spec/40_aoai.md)
@@ -287,7 +288,7 @@ Container App では startup でダウンロード（environment variable では
 | ADR | Title | Status | Priority | Target |
 |-----|-------|--------|----------|--------|
 | ADR-001 | APIM 統合（API 経路分離） | 📋 Decision Pending | P2 | Q3 2026 |
-| ADR-002 | AOAI 統合スコープ | 📋 Decision Pending | P1 | Q3 2026 |
+| ADR-002 | AOAI 統合スコープ（PE 経由） | 🟢 Confirmed | P1 | ✅ Done |
 | ADR-003 | Secret 管理（Key Vault + MI） | 🔄 In Progress | P0 | Q3-Q4 2026 |
 | ADR-004 | App Gateway Entra 認証 | 🟢 Confirmed | ✅ Done | N/A |
 | ADR-005 | NSG ルール段階化 | 🟡 Planned | P1 | Q4 2026 |
@@ -295,5 +296,5 @@ Container App では startup でダウンロード（environment variable では
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: June 5, 2026  
+**Last Updated**: June 12, 2026  
 **Maintainers**: Architecture Team
