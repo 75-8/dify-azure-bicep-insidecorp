@@ -34,34 +34,17 @@ param keyVaultName string = 'dify-kv'
 @description('Explicit Key Vault access policies used for data-plane permissions')
 param keyVaultAccessPolicies array = []
 
-@description('Azure OpenAI account name base')
-param aoaiAccountNameBase string = 'difyaoai'
+@description('Azure AI Services SKU name')
+param aiServicesSku string = 'S0'
 
-@description('Azure OpenAI model deployments configuration')
-param aoaiModelDeployments array = [
-  {
-    name: 'gpt-5-4'
-    model: {
-      name: 'gpt-5.4'
-      version: '2026-04-01'
-    }
-    sku: {
-      name: 'Standard'
-      capacity: 10
-    }
-  }
-  {
-    name: 'text-embedding-ada-003'
-    model: {
-      name: 'text-embedding-ada-003'
-      version: '2'
-    }
-    sku: {
-      name: 'Standard'
-      capacity: 10
-    }
-  }
-]
+@description('Azure AI Services name base')
+param aiServicesNameBase string = 'difyais'
+
+@description('Azure AI Foundry Hub name base')
+param aiHubNameBase string = 'dify-aihub'
+
+@description('Azure AI Foundry Project name base')
+param aiProjectNameBase string = 'dify-aiproject'
 
 @description('ACA environment name')
 param acaEnvName string = 'dify-aca-env'
@@ -241,16 +224,21 @@ module redisModule './modules/redis-cache.bicep' = if (isAcaEnabled) {
   }
 }
 
-// Deploy Azure OpenAI with Private Endpoint
+// Deploy Azure AI Services and Azure AI Foundry Hub/Project
 module aoaiModule './modules/aoai.bicep' = {
   name: 'aoaiDeploy'
   scope: rg
   params: {
     location: location
-    aoaiAccountName: '${aoaiAccountNameBase}${rgNameHex}'
-    modelDeployments: aoaiModelDeployments
+    aiServicesSku: aiServicesSku
+    aiServicesName: '${aiServicesNameBase}${rgNameHex}'
+    aiHubName: '${aiHubNameBase}-${rgNameHex}'
+    aiProjectName: '${aiProjectNameBase}-${rgNameHex}'
     privateLinkSubnetId: networkModule.outputs.privateLinkSubnetId
     vnetId: networkModule.outputs.vnetId
+    storageAccountId: storageModule.outputs.storageAccountId
+    keyVaultId: keyVaultModule.outputs.keyVaultId
+    keyVaultName: keyVaultName
   }
 }
 

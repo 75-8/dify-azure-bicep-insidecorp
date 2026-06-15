@@ -1,54 +1,69 @@
 @description('Resource group location')
 param location string
 
-@description('Azure OpenAI account name')
-param aoaiAccountName string
+@description('SKU for the Azure AI Services account')
+param aiServicesSku string = 'S0'
 
-@description('SKU for the Azure OpenAI account')
-param aoaiSku string = 'S0'
+@description('Azure AI Services name')
+param aiServicesName string
 
-@description('Model deployments to create. Each item must have: name, model.name, model.version, sku.capacity')
-param modelDeployments array = [
-  {
-    name: 'gpt-5-4'
-    model: {
-      name: 'gpt-5.4'
-      version: '2026-04-01'
-    }
-    sku: {
-      name: 'Standard'
-      capacity: 10
-    }
-  }
-  {
-    name: 'text-embedding-ada-003'
-    model: {
-      name: 'text-embedding-ada-003'
-      version: '2'
-    }
-    sku: {
-      name: 'Standard'
-      capacity: 10
-    }
-  }
-]
+@description('Azure AI Foundry Hub name')
+param aiHubName string
 
-@description('Private Link subnet ID used by the AOAI private endpoint')
+@description('Azure AI Foundry Project name')
+param aiProjectName string
+
+@description('Private Link subnet ID used by private endpoints')
 param privateLinkSubnetId string
 
-@description('Virtual network ID linked to the AOAI private DNS zone')
+@description('Virtual network ID linked to the private DNS zones')
 param vnetId string
 
-// Azure OpenAI (Cognitive Services) account
-resource aoaiAccount 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
-  name: aoaiAccountName
+@description('Storage Account resource ID linked to the AI Hub')
+param storageAccountId string
+
+@description('Key Vault resource ID linked to the AI Hub')
+param keyVaultId string
+
+@description('Key Vault name used for access policy')
+param keyVaultName string
+
+// ----------------------------------------------------
+// Monitoring resources for the AI Hub
+// ----------------------------------------------------
+resource aiLogAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: '${aiHubName}-loga'
   location: location
-  kind: 'OpenAI'
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+  }
+}
+
+resource aiAppInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: '${aiHubName}-insights'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: aiLogAnalytics.id
+  }
+}
+
+// ----------------------------------------------------
+// Azure AI Services (backend)
+// ----------------------------------------------------
+resource aiServices 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
+  name: aiServicesName
+  location: location
+  kind: 'AIServices'
   sku: {
-    name: aoaiSku
+    name: aiServicesSku
   }
   properties: {
-    customSubDomainName: aoaiAccountName
+    customSubDomainName: aiServicesName
     publicNetworkAccess: 'Disabled'
     networkAcls: {
       defaultAction: 'Deny'
@@ -58,27 +73,95 @@ resource aoaiAccount 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
   }
 }
 
-// Model deployments
-@batchSize(1)
-resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = [
-  for deployment in modelDeployments: {
-    name: deployment.name
-    parent: aoaiAccount
-    sku: {
-      name: deployment.sku.name
-      capacity: deployment.sku.capacity
+// ----------------------------------------------------
+// Azure AI Foundry Hub
+// ----------------------------------------------------
+resource aiHub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
+  name: aiHubName
+  location: location
+  kind: 'Hub'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    friendlyName: aiHubName
+    storageAccount: storageAccountId
+    keyVault: keyVaultId
+    applicationInsights: aiAppInsights.id
+    publicNetworkAccess: 'Disabled'
+  }
+}
+
+// ----------------------------------------------------
+// Azure AI Services Connection
+// ----------------------------------------------------
+resource aiServicesConnection 'Microsoft.MachineLearningServices/workspaces/connections@2024-04-01' = {
+  name: '${aiHubName}-aisconnection'
+  parent: aiHub
+  properties: {
+    category: 'AIServices'
+    target: aiServices.properties.endpoint
+    authType: 'ApiKey'
+    credentials: {
+      key: listKeys(aiServices.id, aiServices.apiVersion).key1
     }
-    properties: {
-      model: {
-        format: 'OpenAI'
-        name: deployment.model.name
-        version: deployment.model.version
-      }
+    isSharedToAll: true
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: aiServices.id
     }
   }
-]
+}
 
-// Private DNS Zone for Azure OpenAI
+// ----------------------------------------------------
+// Azure AI Foundry Project
+// ----------------------------------------------------
+resource aiProject 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
+  name: aiProjectName
+  location: location
+  kind: 'Project'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    friendlyName: aiProjectName
+    hubId: aiHub.id
+  }
+}
+
+// ----------------------------------------------------
+// Key Vault Access Policy for AI Hub
+// ----------------------------------------------------
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+}
+
+resource kvAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
+  name: 'add'
+  parent: keyVault
+  properties: {
+    accessPolicies: [
+      {
+        tenantId: subscription().tenantId
+        objectId: aiHub.identity.principalId
+        permissions: {
+          keys: [
+            'get'
+            'wrapKey'
+            'unwrapKey'
+          ]
+          secrets: [
+            'get'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+// ----------------------------------------------------
+// DNS Zone and Link for AI Services (OpenAI endpoints)
+// ----------------------------------------------------
 resource aoaiDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: 'privatelink.openai.azure.com'
   location: 'global'
@@ -96,9 +179,31 @@ resource aoaiVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@202
   }
 }
 
-// Private Endpoint
-resource aoaiPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
-  name: 'pe-aoai'
+// ----------------------------------------------------
+// DNS Zone and Link for AI Hub (api.azureml.ms)
+// ----------------------------------------------------
+resource hubDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.api.azureml.ms'
+  location: 'global'
+}
+
+resource hubVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: 'hub-dns-link'
+  parent: hubDnsZone
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
+  }
+}
+
+// ----------------------------------------------------
+// Private Endpoints
+// ----------------------------------------------------
+resource aiServicesPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
+  name: 'pe-aiservices'
   location: location
   properties: {
     subnet: {
@@ -106,9 +211,9 @@ resource aoaiPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
     }
     privateLinkServiceConnections: [
       {
-        name: 'psc-aoai'
+        name: 'psc-aiservices'
         properties: {
-          privateLinkServiceId: aoaiAccount.id
+          privateLinkServiceId: aiServices.id
           groupIds: [
             'account'
           ]
@@ -118,9 +223,9 @@ resource aoaiPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
   }
 }
 
-resource aoaiPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-05-01' = {
-  name: 'pdz-aoai'
-  parent: aoaiPrivateEndpoint
+resource aiServicesPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-05-01' = {
+  name: 'pdz-aiservices'
+  parent: aiServicesPrivateEndpoint
   properties: {
     privateDnsZoneConfigs: [
       {
@@ -133,6 +238,43 @@ resource aoaiPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/private
   }
 }
 
-output aoaiEndpoint string = aoaiAccount.properties.endpoint
-output aoaiAccountName string = aoaiAccount.name
-output aoaiPrivateEndpointId string = aoaiPrivateEndpoint.id
+resource aiHubPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
+  name: 'pe-aihub'
+  location: location
+  properties: {
+    subnet: {
+      id: privateLinkSubnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'psc-aihub'
+        properties: {
+          privateLinkServiceId: aiHub.id
+          groupIds: [
+            'amlworkspace'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource aiHubPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-05-01' = {
+  name: 'pdz-aihub'
+  parent: aiHubPrivateEndpoint
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: hubDnsZone.id
+        }
+      }
+    ]
+  }
+}
+
+output aoaiEndpoint string = aiServices.properties.endpoint
+output aoaiAccountName string = aiServices.name
+output aiHubId string = aiHub.id
+output aiProjectId string = aiProject.id

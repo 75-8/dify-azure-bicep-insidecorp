@@ -15,7 +15,7 @@
 | `storage` | [storage.bicep] | Storage Account、Blob/File の PE、および File Shares の一括作成 |
 | `postgresql` | [postgresql.bicep] | PostgreSQL Flexible Server、データベース (`dify`/`vector`)、拡張機能の有効化 |
 | `redis` | [redis-cache.bicep] | Azure Cache for Redis および Private Endpoint の作成 |
-| `aoai` | [aoai.bicep] | Azure OpenAI Service アカウント、モデルデプロイ、および Private Endpoint / DNS の作成 |
+| `aoai` | [aoai.bicep] | Azure AI Services, Azure AI Foundry Hub/Project, および Private Endpoint / DNS の作成 |
 | `aca-env` | [aca-env.bicep] | ACA Environment と各サービス (`nginx`, `ssrfproxy`, `web`, `api`, `worker` 等) のオーケストレーション |
 | `appgw` | [appgw.bicep] | Application Gateway およびルーティング・SSL証明書・プローブの構成 |
 | `apim` | [apim.bicep] | APIM プレースホルダーモジュール（現在 [main.bicep] からは未統合） |
